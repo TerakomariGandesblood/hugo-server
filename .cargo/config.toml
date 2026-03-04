@@ -1,0 +1,5 @@
+[build]
+rustflags = ["--deny", "warnings"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["--deny", "warnings", "--codegen", "target-feature=+crt-static"]

@@ -1,0 +1,25 @@
+name: Check
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - "main"
+    tags-ignore:
+      - "**"
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**.md"
+
+jobs:
+  check:
+    uses: TerakomariGandesblood/github-workflows/.github/workflows/rust-check.yml@main
+    with:
+      msrv: "1.88.0"
+      run_doc_check: false

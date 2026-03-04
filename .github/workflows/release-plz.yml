@@ -1,0 +1,21 @@
+name: Release-plz
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - "main"
+    tags-ignore:
+      - "**"
+
+jobs:
+  release-plz:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: TerakomariGandesblood/github-workflows/.github/workflows/rust-release-plz.yml@main
+    secrets:
+      RELEASE_PLZ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
