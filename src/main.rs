@@ -10,6 +10,7 @@ use gix::{Repository, Url};
 use hugo_server::{AlgoliaClient, Args, EnvConfig};
 use mimalloc::MiMalloc;
 use tokio::net::TcpListener;
+use tokio::task;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -52,7 +53,7 @@ async fn main() -> Result<()> {
         &env_config.algolia_index_name,
     )?;
 
-    let handle = thread::spawn(move || {
+    let handle = task::spawn_blocking(move || {
         'main: loop {
             for _ in 0..60 {
                 match rx.try_recv() {
@@ -72,6 +73,8 @@ async fn main() -> Result<()> {
                     &env_config.algolia_api_key,
                     &env_config.algolia_index_name,
                 )?;
+
+                tracing::info!("Website update completed");
             }
         }
 
@@ -88,7 +91,7 @@ async fn main() -> Result<()> {
         .await?;
 
     tx.send(())?;
-    handle.join().unwrap()?;
+    handle.await??;
 
     Ok(())
 }
