@@ -1,6 +1,4 @@
 use std::io;
-use std::net::Ipv4Addr;
-use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::builder::Styles;
@@ -9,26 +7,10 @@ use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::Generator;
 use clap_verbosity_flag::Verbosity;
 use supports_color::Stream;
-use url::Url;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None, styles = get_styles())]
 pub struct Args {
-    /// The Git URL for the Hugo project
-    pub repo_url: Url,
-
-    /// Path where the Hugo project is cloned into
-    #[arg(long, default_value = String::from("web"))]
-    pub repo_dst: PathBuf,
-
-    /// Listening Address
-    #[arg(long, default_value_t = Ipv4Addr::new(127, 0, 0, 1))]
-    pub host: Ipv4Addr,
-
-    /// Listening port
-    #[arg(long, default_value_t = 8001)]
-    pub port: u16,
-
     /// Generate shell completion to standard output
     #[arg(long, value_enum)]
     pub completion: Option<Shell>,

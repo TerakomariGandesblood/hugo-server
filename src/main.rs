@@ -7,7 +7,7 @@ use std::{env, fs, thread};
 use anyhow::Result;
 use clap::Parser;
 use gix::{Repository, Url};
-use hugo_server::Args;
+use hugo_server::{AlgoliaClient, Args, EnvConfig};
 use mimalloc::MiMalloc;
 use tokio::net::TcpListener;
 
@@ -16,8 +16,11 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut args = Args::parse();
-    args.repo_dst = env::current_dir()?.join(&args.repo_dst);
+    let args = Args::parse();
+
+    dotenvy::dotenv()?;
+    let mut env_config: EnvConfig = envy::from_env()?;
+    env_config.repo_dst = env::current_dir()?.join(&env_config.repo_dst);
 
     let _guard = hugo_server::init_log(&args.verbose, "log", env!("CARGO_CRATE_NAME"))?;
 
@@ -30,14 +33,24 @@ async fn main() -> Result<()> {
         anyhow::bail!("hugo is unavailable: {error}");
     }
 
-    let build_dst = args.repo_dst.join("public");
-    let repo_url = gix::url::parse(args.repo_url.as_str().into())?;
+    let build_dst = env_config.repo_dst.join("public");
+    let repo_url = gix::url::parse(env_config.repo_url.as_str().into())?;
 
     let router = hugo_server::router(&build_dst);
-    let listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.host), args.port)).await?;
+    let listener = TcpListener::bind(SocketAddr::new(
+        IpAddr::V4(env_config.host),
+        env_config.port,
+    ))
+    .await?;
 
     let (tx, rx) = mpsc::channel();
-    let mut repo = clone_and_build(&repo_url, &args.repo_dst, &build_dst)?;
+    let mut repo = clone_and_build(&repo_url, &env_config.repo_dst, &build_dst)?;
+    upload_algolia_records(
+        &build_dst,
+        &env_config.algolia_application_id,
+        &env_config.algolia_api_key,
+        &env_config.algolia_index_name,
+    )?;
 
     let handle = thread::spawn(move || {
         'main: loop {
@@ -51,14 +64,25 @@ async fn main() -> Result<()> {
 
             if !hugo_server::fetch_and_no_change(&repo)? {
                 tracing::info!("The website has been updated and will be rebuilt");
-                repo = clone_and_build(&repo_url, &args.repo_dst, &build_dst)?;
+
+                repo = clone_and_build(&repo_url, &env_config.repo_dst, &build_dst)?;
+                upload_algolia_records(
+                    &build_dst,
+                    &env_config.algolia_application_id,
+                    &env_config.algolia_api_key,
+                    &env_config.algolia_index_name,
+                )?;
             }
         }
 
         anyhow::Ok(())
     });
 
-    tracing::info!("listening on {}", listener.local_addr()?);
+    tracing::info!(
+        "Web Server is available at http://localhost:{}/ (bind address {})",
+        env_config.port,
+        env_config.host
+    );
     axum::serve(listener, router)
         .with_graceful_shutdown(hugo_server::shutdown_signal())
         .await?;
@@ -78,10 +102,10 @@ fn clone_and_build(repo_url: &Url, repo_dst: &Path, build_dst: &Path) -> Result<
         fs::remove_dir_all(repo_dst)?;
     }
 
-    tracing::info!("Repo cloned into {}", repo_dst.display());
+    tracing::info!("Repo clone into {}", repo_dst.display());
     let repo = hugo_server::clone(repo_url, repo_dst)?;
 
-    tracing::info!("Hugo builded into {}", build_dst.display());
+    tracing::info!("Hugo build into {}", build_dst.display());
     let repo_dst = repo_dst.to_str().unwrap();
     cmd_lib::run_cmd!(
         cd $repo_dst;
@@ -89,4 +113,22 @@ fn clone_and_build(repo_url: &Url, repo_dst: &Path, build_dst: &Path) -> Result<
     )?;
 
     Ok(repo)
+}
+
+fn upload_algolia_records(
+    build_dst: &Path,
+    application_id: &str,
+    api_key: &str,
+    index_name: &str,
+) -> Result<()> {
+    let algolia_json = build_dst.join("algolia.json");
+    if algolia_json.is_file() {
+        tracing::info!("Begin uploading Algolia records");
+
+        let client = AlgoliaClient::build(application_id, api_key)?;
+        client.delete_all_records(index_name)?;
+        client.add_records(index_name, algolia_json)?;
+    }
+
+    Ok(())
 }

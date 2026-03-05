@@ -1,12 +1,16 @@
+mod algolia;
 mod args;
+mod env;
 mod git;
 mod log;
 mod router;
 
+pub use algolia::*;
 pub use args::*;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+pub use env::*;
 pub use git::*;
 pub use log::*;
 pub use router::*;
