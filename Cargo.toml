@@ -28,12 +28,14 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
   "smallvec",
   "tracing-log",
   "env-filter",
-  "chrono",
 ] }
 # https://github.com/tokio-rs/tracing/tree/main/tracing-appender
 tracing-appender = { version = "0.2.4", default-features = false }
-# https://github.com/alasdairpan/logroller
-logroller = { version = "0.1.10", default-features = false }
+# https://github.com/BurntSushi/jiff
+jiff = { version = "0.2.23", default-features = false, features = [
+  "std",
+  "perf-inline",
+] }
 # https://github.com/tokio-rs/axum
 axum = { version = "0.8.8", default-features = false, features = [
   "http2",
