@@ -19,14 +19,15 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    let config = Config::load_config("config.toml")?;
-
-    let _guard = hugo_server::init_log(&args.verbose, "log")?;
 
     if let Some(shell) = args.completion {
         hugo_server::generate_completion(shell)?;
         return Ok(());
     }
+
+    let _guard = hugo_server::init_log(&args.verbose, "log")?;
+
+    let config = Config::load_config("config.toml")?;
 
     if let Err(error) = which::which("hugo") {
         anyhow::bail!("hugo is unavailable: {error}");
