@@ -7,7 +7,6 @@ use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::Generator;
 use clap_verbosity_flag::Verbosity;
 use supports_color::Stream;
-use sysinfo::System;
 
 #[derive(Parser)]
 #[command(about, version = version_msg(), styles = get_styles())]
@@ -20,26 +19,11 @@ pub struct Args {
     pub verbose: Verbosity,
 }
 
-shadow_rs::shadow!(shadow_build);
-
 #[must_use]
 fn version_msg() -> String {
     let version = clap::crate_version!();
     let author = clap::crate_authors!();
     let home_page = env!("CARGO_PKG_HOMEPAGE");
-
-    let commit_date = shadow_build::COMMIT_DATE;
-    let commit_hash = shadow_build::COMMIT_HASH;
-    let build_time = shadow_build::BUILD_TIME;
-    let build_target = shadow_build::BUILD_TARGET;
-
-    let os_version = System::long_os_version().unwrap_or(String::from("unknow os"));
-    let cpu_arch = System::cpu_arch();
-
-    let current_exe_path = env::current_exe()
-        .expect("unable to get current executable path")
-        .display()
-        .to_string();
 
     format!(
         "\
@@ -47,16 +31,7 @@ fn version_msg() -> String {
 
 Author: {author}
 Author's Telegram: https://t.me/TerakomariGandesblood
-Project home page: {home_page}
-
-Commit date: {commit_date}
-Commit hash: {commit_hash}
-Build time: {build_time}
-Build target: {build_target}
-
-OS information: {os_version} [{cpu_arch}]
-
-Executable path: {current_exe_path}"
+Project home page: {home_page}"
     )
 }
 
