@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
 use tokio::task;
 
+#[must_use]
 pub struct AlgoliaClient {
     client: Client,
     application_id: String,
@@ -102,17 +103,20 @@ impl AlgoliaClient {
     }
 }
 
+#[must_use]
 #[derive(Serialize)]
 struct BatchData {
     requests: Vec<BatchRequest>,
 }
 
+#[must_use]
 #[derive(Serialize)]
 struct BatchRequest {
     action: &'static str,
     body: BatchRequestBody,
 }
 
+#[must_use]
 #[derive(Serialize, Deserialize)]
 struct BatchRequestBody {
     #[serde(rename = "objectID")]

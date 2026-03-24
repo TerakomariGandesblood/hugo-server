@@ -1,4 +1,4 @@
-use std::io;
+use std::{env, io};
 
 use anyhow::Result;
 use clap::builder::Styles;
@@ -7,9 +7,10 @@ use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::Generator;
 use clap_verbosity_flag::Verbosity;
 use supports_color::Stream;
+use sysinfo::System;
 
 #[derive(Parser)]
-#[command(version, about, long_about = None, styles = get_styles())]
+#[command(about, version = version_msg(), styles = get_styles())]
 pub struct Args {
     /// Generate shell completion to standard output
     #[arg(long, value_enum)]
@@ -17,6 +18,46 @@ pub struct Args {
 
     #[command(flatten)]
     pub verbose: Verbosity,
+}
+
+shadow_rs::shadow!(shadow_build);
+
+#[must_use]
+fn version_msg() -> String {
+    let version = clap::crate_version!();
+    let author = clap::crate_authors!();
+    let home_page = env!("CARGO_PKG_HOMEPAGE");
+
+    let commit_date = shadow_build::COMMIT_DATE;
+    let commit_hash = shadow_build::COMMIT_HASH;
+    let build_time = shadow_build::BUILD_TIME;
+    let build_target = shadow_build::BUILD_TARGET;
+
+    let os_version = System::long_os_version().unwrap_or(String::from("unknow os"));
+    let cpu_arch = System::cpu_arch();
+
+    let current_exe_path = env::current_exe()
+        .expect("unable to get current executable path")
+        .display()
+        .to_string();
+
+    format!(
+        "\
+{version}
+
+Author: {author}
+Author's Telegram: https://t.me/TerakomariGandesblood
+Project home page: {home_page}
+
+Commit date: {commit_date}
+Commit hash: {commit_hash}
+Build time: {build_time}
+Build target: {build_target}
+
+OS information: {os_version} [{cpu_arch}]
+
+Executable path: {current_exe_path}"
+    )
 }
 
 const HEADER: Style = AnsiColor::Green.on_default().bold();
@@ -67,14 +108,33 @@ impl Shell {
     }
 }
 
+impl Generator for Shell {
+    fn file_name(&self, name: &str) -> String {
+        self.to_clap_type().file_name(name)
+    }
+
+    fn generate(&self, cmd: &clap::Command, buf: &mut dyn io::Write) {
+        self.to_clap_type().generate(cmd, buf);
+    }
+}
+
 pub fn generate_completion(shell: Shell) -> Result<()> {
     let mut cmd = Args::command();
     let bin_name = cmd.get_name().to_string();
 
-    cmd.set_bin_name(bin_name);
-    cmd.build();
-
-    shell.to_clap_type().generate(&cmd, &mut io::stdout());
+    clap_complete::generate(shell, &mut cmd, bin_name, &mut io::stdout());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use super::*;
+
+    #[test]
+    fn verify_cli() {
+        Args::command().debug_assert();
+    }
 }

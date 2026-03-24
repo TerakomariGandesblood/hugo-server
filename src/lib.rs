@@ -1,16 +1,20 @@
 mod algolia;
 mod args;
-mod env;
+mod config;
 mod git;
 mod log;
 mod router;
+
+use std::net::SocketAddr;
+use std::time::Duration;
 
 pub use algolia::*;
 pub use args::*;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-pub use env::*;
+use axum_server::Handle;
+pub use config::*;
 pub use git::*;
 pub use log::*;
 pub use router::*;
@@ -51,7 +55,7 @@ where
     }
 }
 
-pub async fn shutdown_signal() {
+pub async fn shutdown_signal(handle: Handle<SocketAddr>) {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -73,4 +77,7 @@ pub async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
+
+    tracing::info!("Received termination signal shutting down");
+    handle.graceful_shutdown(Some(Duration::from_secs(10)));
 }

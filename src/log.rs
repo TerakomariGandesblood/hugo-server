@@ -1,66 +1,80 @@
 use std::path::Path;
-use std::{env, fs};
+use std::{env, io};
 
 use anyhow::Result;
 use clap_verbosity_flag::Verbosity;
+use logroller::{LogRollerBuilder, Rotation, RotationAge, TimeZone};
 use supports_color::Stream;
-use tracing::subscriber;
 use tracing_appender::non_blocking::WorkerGuard;
-use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_log::LogTracer;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::Layer;
 use tracing_subscriber::fmt::time::ChronoLocal;
 use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
-pub fn init_log<T>(verbose: &Verbosity, log_file_path: T, app_name: &str) -> Result<WorkerGuard>
+pub fn init_log<T>(verbose: &Verbosity, log_directory: T) -> Result<WorkerGuard>
 where
     T: AsRef<Path>,
 {
-    if env::var("RUST_LOG").is_err() {
+    let filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
         if verbose.is_silent() {
-            unsafe {
-                env::set_var("RUST_LOG", "none");
-            }
+            "none".into()
         } else {
-            LogTracer::init()?;
-            unsafe {
-                env::set_var(
-                    "RUST_LOG",
-                    format!(
-                        "none,tower_http={0},axum={0},{1}={0}",
-                        verbose.filter(),
-                        env!("CARGO_CRATE_NAME")
-                    ),
-                );
-            }
+            format!(
+                "{}={1},tower_http={1},axum::rejection=trace",
+                env!("CARGO_CRATE_NAME"),
+                verbose.filter(),
+            )
+            .into()
         }
-    }
+    });
 
-    if !log_file_path.as_ref().try_exists()? {
-        fs::create_dir_all(&log_file_path)?;
-    }
+    let log_file_name = env::current_exe()?
+        .with_extension("log")
+        .file_name()
+        .unwrap()
+        .to_str()
+        .expect("the file name is not in valid UTF-8")
+        .to_string();
 
-    let file_appender = RollingFileAppender::builder()
-        .rotation(Rotation::DAILY)
-        .filename_prefix(format!("{}.log", app_name))
-        .max_log_files(7)
-        .build(log_file_path)?;
+    let file_appender = LogRollerBuilder::new(log_directory.as_ref(), Path::new(&log_file_name))
+        .rotation(Rotation::AgeBased(RotationAge::Daily))
+        .time_zone(TimeZone::Local)
+        .max_keep_files(7)
+        .graceful_shutdown(true)
+        .build()?;
+
     let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
-
-    let layer = Layer::default()
+    let file_layer = Layer::new()
         .with_writer(file_writer)
         .with_timer(ChronoLocal::rfc_3339())
         .with_ansi(false);
 
-    let subscriber = tracing_subscriber::fmt()
+    let stdout_layer = Layer::new()
+        .with_writer(io::stdout)
         .with_timer(ChronoLocal::rfc_3339())
-        .with_env_filter(EnvFilter::from_default_env())
-        .with_ansi(supports_color::on(Stream::Stdout).is_some())
-        .finish()
-        .with(layer);
+        .with_ansi(supports_color::on(Stream::Stdout).is_some());
 
-    subscriber::set_global_default(subscriber)?;
+    tracing_subscriber::registry()
+        .with(filter_layer)
+        .with(file_layer)
+        .with(stdout_layer)
+        .init();
 
     Ok(guard)
+}
+
+#[cfg(test)]
+mod tests {
+    use testresult::TestResult;
+
+    use super::*;
+
+    #[test]
+    fn test_init_log() -> TestResult {
+        let _ = init_log(&clap_verbosity_flag::Verbosity::new(4, 0), "log")?;
+        tracing::trace!("test trace");
+
+        Ok(())
+    }
 }

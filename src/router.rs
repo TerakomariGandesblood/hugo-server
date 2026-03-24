@@ -24,11 +24,11 @@ where
         .layer(
             ServiceBuilder::new()
                 .layer(HandleErrorLayer::new(handle_error))
-                .timeout(Duration::from_secs(10))
-                .load_shed()
-                .concurrency_limit(1024)
                 .layer(RequestDecompressionLayer::new())
                 .layer(CompressionLayer::new())
+                .load_shed()
+                .concurrency_limit(1024)
+                .timeout(Duration::from_secs(10))
                 .layer(TraceLayer::new_for_http()),
         )
 }
@@ -50,6 +50,6 @@ async fn handle_error(error: BoxError) -> impl IntoResponse {
 
     ServerError(
         StatusCode::INTERNAL_SERVER_ERROR,
-        anyhow::anyhow!("Unhandled internal error: {error}"),
+        anyhow::anyhow!("unhandled internal error: {error}"),
     )
 }

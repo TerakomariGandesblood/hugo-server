@@ -11,55 +11,57 @@ description = "A hugo server"
 readme = "README.md"
 keywords = ["hugo", "server", "http"]
 categories = ["command-line-utilities"]
+build = "build.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
 
 [dependencies]
 # https://github.com/dtolnay/anyhow
 anyhow = { version = "1.0.102", default-features = false, features = ["std"] }
-# https://github.com/tokio-rs/tracing
+# https://github.com/tokio-rs/tracing/tree/main/tracing
 tracing = { version = "0.1.44", default-features = false, features = ["std"] }
-# https://github.com/tokio-rs/tracing
-tracing-subscriber = { version = "0.3.22", default-features = false, features = [
+# https://github.com/tokio-rs/tracing/tree/main/tracing-subscriber
+tracing-subscriber = { version = "0.3.23", default-features = false, features = [
   "std",
   "fmt",
   "ansi",
-  "env-filter",
-  # https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/time/struct.ChronoLocal.html
-  "chrono",
-  "tracing-log",
   "smallvec",
+  "tracing-log",
+  "env-filter",
+  "chrono",
 ] }
-# https://github.com/tokio-rs/tracing
+# https://github.com/tokio-rs/tracing/tree/main/tracing-appender
 tracing-appender = { version = "0.2.4", default-features = false }
-# https://github.com/tokio-rs/tracing
-tracing-log = { version = "0.2.0", default-features = false, features = [
-  "std",
-  "log-tracer",
-] }
+# https://github.com/alasdairpan/logroller
+logroller = { version = "0.1.10", default-features = false }
 # https://github.com/tokio-rs/axum
 axum = { version = "0.8.8", default-features = false, features = [
-  "http1",
   "http2",
   "json",
   "tokio",
   "tower-log",
   "tracing",
 ] }
-# https://github.com/tower-rs/tower
+# https://github.com/programatik29/axum-server
+axum-server = { version = "0.8.0", default-features = false, features = [
+  "tls-rustls",
+] }
+# https://github.com/tower-rs/tower/tree/master/tower
 tower = { version = "0.5.3", default-features = false, features = [
   "limit",
   "load-shed",
   "timeout",
 ] }
-# https://github.com/tower-rs/tower-http
+# https://github.com/tower-rs/tower-http/tree/main/tower-http
 tower-http = { version = "0.6.8", default-features = false, features = [
   "compression-full",
   "decompression-full",
   "trace",
   "fs",
 ] }
-# https://github.com/tokio-rs/tokio
+# https://github.com/tokio-rs/tokio/tree/master/tokio
 tokio = { version = "1.50.0", default-features = false, features = [
-  "fs",
   "macros",
   "signal",
   "rt-multi-thread",
@@ -67,7 +69,7 @@ tokio = { version = "1.50.0", default-features = false, features = [
 # https://github.com/zkat/supports-color
 supports-color = { version = "3.0.2", default-features = false }
 # https://github.com/clap-rs/clap
-clap = { version = "4.5.60", default-features = false, features = [
+clap = { version = "4.6.0", default-features = false, features = [
   "std",
   "color",
   "help",
@@ -77,24 +79,24 @@ clap = { version = "4.5.60", default-features = false, features = [
   "derive",
   "cargo",
   "wrap_help",
-  "unicode",
   "string",
 ] }
 # https://github.com/clap-rs/clap-verbosity-flag
 clap-verbosity-flag = { version = "3.0.4", default-features = false }
-# https://github.com/clap-rs/clap
-clap_complete = { version = "4.5.66", default-features = false }
-# https://github.com/clap-rs/clap
-clap_complete_nushell = { version = "4.5.10", default-features = false }
+# https://github.com/clap-rs/clap/tree/master/clap_complete
+clap_complete = { version = "4.6.0", default-features = false }
+# https://github.com/clap-rs/clap/tree/master/clap_complete_nushell
+clap_complete_nushell = { version = "4.6.0", default-features = false }
 # https://github.com/purpleprotocol/mimalloc_rust
 mimalloc = { version = "0.1.48", default-features = false }
-# https://github.com/serde-rs/serde
+# https://github.com/serde-rs/serde/tree/master/serde
 serde = { version = "1.0.228", default-features = false, features = [
   "std",
   "derive",
 ] }
-# https://github.com/GitoxideLabs/gitoxide
-gix = { version = "0.80.0", default-features = false, features = [
+# https://github.com/GitoxideLabs/gitoxide/tree/main/gix
+gix = { version = "0.81.0", default-features = false, features = [
+  "sha1",
   "worktree-mutation",
   "max-performance",
   "blocking-http-transport-reqwest-rust-tls",
@@ -102,22 +104,52 @@ gix = { version = "0.80.0", default-features = false, features = [
 # https://github.com/rust-shell-script/rust_cmd_lib
 cmd_lib = { version = "2.0.0", default-features = false }
 # https://github.com/harryfei/which-rs
-which = { version = "8.0.0", default-features = false, features = ["real-sys"] }
+which = { version = "8.0.2", default-features = false, features = ["real-sys"] }
 # https://github.com/seanmonstar/reqwest
 reqwest = { version = "0.13.2", default-features = false, features = [
   "http2",
   "rustls",
   "gzip",
+  "brotli",
+  "zstd",
   "deflate",
   "json",
   "system-proxy",
 ] }
 # https://github.com/cloudwego/sonic-rs
 sonic-rs = { version = "0.5.7", default-features = false }
-# https://github.com/softprops/envy
-envy = { version = "0.4.2", default-features = false }
-# https://github.com/allan2/dotenvy
-dotenvy = { version = "0.15.7", default-features = false }
+# https://github.com/toml-rs/toml/tree/main/crates/toml
+toml = { version = "1.1.0", default-features = false, features = [
+  "std",
+  "serde",
+  "parse",
+  "fast_hash",
+] }
+# https://github.com/servo/rust-url/tree/main/url
+url = { version = "2.5.8", default-features = false, features = [
+  "std",
+  "serde",
+] }
+# https://github.com/GuillaumeGomez/sysinfo
+sysinfo = { version = "0.38.4", default-features = false, features = [
+  "system",
+] }
+# https://github.com/baoyachi/shadow-rs
+shadow-rs = { version = "1.7.1", default-features = false }
+
+[dev-dependencies]
+# https://github.com/dbrgn/tracing-test/tree/main/tracing-test
+tracing-test = { version = "0.2.6", default-features = false }
+# https://github.com/wiktor-k/testresult
+testresult = { version = "0.4.1", default-features = false }
+
+[build-dependencies]
+# https://github.com/baoyachi/shadow-rs
+shadow-rs = { version = "1.7.1", default-features = false, features = [
+  "git2",
+  "tzdb",
+  "build",
+] }
 
 [profile.release]
 strip = true
