@@ -17,5 +17,5 @@ target/
 .idea/
 
 log/
-config.toml
+.config.toml
 certs/

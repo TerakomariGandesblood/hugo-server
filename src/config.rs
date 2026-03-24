@@ -97,7 +97,7 @@ mod tests {
     #[test]
     #[traced_test]
     fn test_load_config() -> TestResult {
-        let _ = Config::load_config("config.toml")?;
+        let _ = Config::load_config(".config.toml")?;
 
         Ok(())
     }

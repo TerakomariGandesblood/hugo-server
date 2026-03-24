@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 
     let _guard = hugo_server::init_log(&args.verbose, "log")?;
 
-    let config = Config::load_config("config.toml")?;
+    let config = Config::load_config(".config.toml")?;
 
     if let Err(error) = which::which("hugo") {
         anyhow::bail!("hugo is unavailable: {error}");
