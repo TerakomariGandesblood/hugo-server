@@ -16,8 +16,31 @@ categories = ["command-line-utilities"]
 unsafe_code = "forbid"
 
 [dependencies]
+# https://github.com/purpleprotocol/mimalloc_rust
+mimalloc = { version = "0.1.48", default-features = false }
 # https://github.com/dtolnay/anyhow
 anyhow = { version = "1.0.102", default-features = false, features = ["std"] }
+# https://github.com/zkat/supports-color
+supports-color = { version = "3.0.2", default-features = false }
+# https://github.com/clap-rs/clap
+clap = { version = "4.6.0", default-features = false, features = [
+  "std",
+  "color",
+  "help",
+  "usage",
+  "error-context",
+  "suggestions",
+  "derive",
+  "cargo",
+  "wrap_help",
+  "string",
+] }
+# https://github.com/clap-rs/clap-verbosity-flag
+clap-verbosity-flag = { version = "3.0.4", default-features = false }
+# https://github.com/clap-rs/clap/tree/master/clap_complete
+clap_complete = { version = "4.6.0", default-features = false }
+# https://github.com/clap-rs/clap/tree/master/clap_complete_nushell
+clap_complete_nushell = { version = "4.6.0", default-features = false }
 # https://github.com/tokio-rs/tracing/tree/main/tracing
 tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 # https://github.com/tokio-rs/tracing/tree/main/tracing-subscriber
@@ -31,10 +54,35 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
 ] }
 # https://github.com/tokio-rs/tracing/tree/main/tracing-appender
 tracing-appender = { version = "0.2.4", default-features = false }
+# https://github.com/serde-rs/serde/tree/master/serde
+serde = { version = "1.0.228", default-features = false, features = [
+  "std",
+  "derive",
+] }
+# https://github.com/cloudwego/sonic-rs
+sonic-rs = { version = "0.5.8", default-features = false }
+# https://github.com/toml-rs/toml/tree/main/crates/toml
+toml = { version = "1.1.1", default-features = false, features = [
+  "std",
+  "serde",
+  "parse",
+  "fast_hash",
+] }
+# https://github.com/servo/rust-url/tree/main/url
+url = { version = "2.5.8", default-features = false, features = [
+  "std",
+  "serde",
+] }
 # https://github.com/BurntSushi/jiff
 jiff = { version = "0.2.23", default-features = false, features = [
   "std",
   "perf-inline",
+] }
+# https://github.com/tokio-rs/tokio/tree/master/tokio
+tokio = { version = "1.50.0", default-features = false, features = [
+  "macros",
+  "signal",
+  "rt-multi-thread",
 ] }
 # https://github.com/tokio-rs/axum
 axum = { version = "0.8.8", default-features = false, features = [
@@ -61,39 +109,16 @@ tower-http = { version = "0.6.8", default-features = false, features = [
   "trace",
   "fs",
 ] }
-# https://github.com/tokio-rs/tokio/tree/master/tokio
-tokio = { version = "1.50.0", default-features = false, features = [
-  "macros",
-  "signal",
-  "rt-multi-thread",
-] }
-# https://github.com/zkat/supports-color
-supports-color = { version = "3.0.2", default-features = false }
-# https://github.com/clap-rs/clap
-clap = { version = "4.6.0", default-features = false, features = [
-  "std",
-  "color",
-  "help",
-  "usage",
-  "error-context",
-  "suggestions",
-  "derive",
-  "cargo",
-  "wrap_help",
-  "string",
-] }
-# https://github.com/clap-rs/clap-verbosity-flag
-clap-verbosity-flag = { version = "3.0.4", default-features = false }
-# https://github.com/clap-rs/clap/tree/master/clap_complete
-clap_complete = { version = "4.6.0", default-features = false }
-# https://github.com/clap-rs/clap/tree/master/clap_complete_nushell
-clap_complete_nushell = { version = "4.6.0", default-features = false }
-# https://github.com/purpleprotocol/mimalloc_rust
-mimalloc = { version = "0.1.48", default-features = false }
-# https://github.com/serde-rs/serde/tree/master/serde
-serde = { version = "1.0.228", default-features = false, features = [
-  "std",
-  "derive",
+# https://github.com/seanmonstar/reqwest
+reqwest = { version = "0.13.2", default-features = false, features = [
+  "http2",
+  "rustls",
+  "gzip",
+  "brotli",
+  "zstd",
+  "deflate",
+  "json",
+  "system-proxy",
 ] }
 # https://github.com/GitoxideLabs/gitoxide/tree/main/gix
 gix = { version = "0.81.0", default-features = false, features = [
@@ -106,40 +131,9 @@ gix = { version = "0.81.0", default-features = false, features = [
 cmd_lib = { version = "2.0.0", default-features = false }
 # https://github.com/harryfei/which-rs
 which = { version = "8.0.2", default-features = false, features = ["real-sys"] }
-# https://github.com/seanmonstar/reqwest
-reqwest = { version = "0.13.2", default-features = false, features = [
-  "http2",
-  "rustls",
-  "gzip",
-  "brotli",
-  "zstd",
-  "deflate",
-  "json",
-  "system-proxy",
-] }
-# https://github.com/cloudwego/sonic-rs
-sonic-rs = { version = "0.5.7", default-features = false }
-# https://github.com/toml-rs/toml/tree/main/crates/toml
-toml = { version = "1.1.0", default-features = false, features = [
-  "std",
-  "serde",
-  "parse",
-  "fast_hash",
-] }
-# https://github.com/servo/rust-url/tree/main/url
-url = { version = "2.5.8", default-features = false, features = [
-  "std",
-  "serde",
-] }
 
 [dev-dependencies]
 # https://github.com/dbrgn/tracing-test/tree/main/tracing-test
 tracing-test = { version = "0.2.6", default-features = false }
 # https://github.com/wiktor-k/testresult
 testresult = { version = "0.4.1", default-features = false }
-
-[profile.release]
-strip = true
-lto = true
-codegen-units = 1
-panic = 'abort'
