@@ -38,7 +38,7 @@ clap = { version = "4.6.0", default-features = false, features = [
 # https://github.com/clap-rs/clap-verbosity-flag
 clap-verbosity-flag = { version = "3.0.4", default-features = false }
 # https://github.com/clap-rs/clap/tree/master/clap_complete
-clap_complete = { version = "4.6.0", default-features = false }
+clap_complete = { version = "4.6.2", default-features = false }
 # https://github.com/clap-rs/clap/tree/master/clap_complete_nushell
 clap_complete_nushell = { version = "4.6.0", default-features = false }
 # https://github.com/tokio-rs/tracing/tree/main/tracing
@@ -62,7 +62,7 @@ serde = { version = "1.0.228", default-features = false, features = [
 # https://github.com/cloudwego/sonic-rs
 sonic-rs = { version = "0.5.8", default-features = false }
 # https://github.com/toml-rs/toml/tree/main/crates/toml
-toml = { version = "1.1.1", default-features = false, features = [
+toml = { version = "1.1.2", default-features = false, features = [
   "std",
   "serde",
   "parse",
@@ -79,13 +79,16 @@ jiff = { version = "0.2.23", default-features = false, features = [
   "perf-inline",
 ] }
 # https://github.com/tokio-rs/tokio/tree/master/tokio
-tokio = { version = "1.50.0", default-features = false, features = [
+tokio = { version = "1.52.0", default-features = false, features = [
   "macros",
   "signal",
+  "process",
   "rt-multi-thread",
 ] }
+# https://github.com/tokio-rs/tokio/tree/master/tokio-util
+tokio-util = { version = "0.7.18", default-features = false }
 # https://github.com/tokio-rs/axum
-axum = { version = "0.8.8", default-features = false, features = [
+axum = { version = "0.8.9", default-features = false, features = [
   "http2",
   "json",
   "tokio",
@@ -120,17 +123,15 @@ reqwest = { version = "0.13.2", default-features = false, features = [
   "json",
   "system-proxy",
 ] }
-# https://github.com/GitoxideLabs/gitoxide/tree/main/gix
-gix = { version = "0.81.0", default-features = false, features = [
-  "sha1",
-  "worktree-mutation",
-  "max-performance",
-  "blocking-http-transport-reqwest-rust-tls",
-] }
-# https://github.com/rust-shell-script/rust_cmd_lib
-cmd_lib = { version = "2.0.0", default-features = false }
 # https://github.com/harryfei/which-rs
 which = { version = "8.0.2", default-features = false, features = ["real-sys"] }
+# https://github.com/rusticstuff/simdutf8
+simdutf8 = { version = "0.1.5", default-features = false, features = [
+  "std",
+  "aarch64_neon",
+] }
+# https://github.com/matklad/once_cell
+once_cell = { version = "1.21.4", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 # https://github.com/dbrgn/tracing-test/tree/main/tracing-test

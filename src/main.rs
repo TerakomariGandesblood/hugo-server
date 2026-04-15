@@ -1,17 +1,14 @@
 use std::net::{IpAddr, SocketAddr};
-use std::path::Path;
-use std::sync::mpsc::{self, TryRecvError};
 use std::time::Duration;
-use std::{fs, thread};
 
 use anyhow::Result;
 use axum_server::Handle;
 use axum_server::tls_rustls::RustlsConfig;
 use clap::Parser;
-use gix::{Repository, Url};
-use hugo_server::{AlgoliaClient, Args, Config};
+use hugo_server::{Args, Config};
 use mimalloc::MiMalloc;
-use tokio::task;
+use tokio::fs;
+use tokio_util::sync::CancellationToken;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -29,17 +26,11 @@ async fn main() -> Result<()> {
 
     let config = Config::load_config(".config.toml")?;
 
-    if let Err(error) = which::which("hugo") {
-        anyhow::bail!("hugo is unavailable: {error}");
-    }
+    hugo_server::check_cmd()?;
 
-    let build_dst = config.hugo.repo_dst.join("public");
-    let repo_url = gix::url::parse(config.hugo.repo_url.as_str().into())?;
+    init_website(&config).await?;
 
-    let mut repo = clone_and_build(&repo_url, &config.hugo.repo_dst, &build_dst)?;
-    upload_algolia_records(&build_dst, &config)?;
-
-    let router = hugo_server::router(&build_dst);
+    let router = hugo_server::router(config.build_dst()?);
     let addr = SocketAddr::new(IpAddr::V4(config.server.host), config.server.port);
     let https_config =
         RustlsConfig::from_pem_file(&config.https.cert_path, &config.https.key_path).await?;
@@ -53,28 +44,20 @@ async fn main() -> Result<()> {
         config.server.host
     );
 
-    let (tx, rx) = mpsc::channel();
-    let handle = task::spawn_blocking(move || {
-        'main: loop {
-            for _ in 0..60 {
-                match rx.try_recv() {
-                    Ok(_) | Err(TryRecvError::Disconnected) => break 'main,
-                    Err(TryRecvError::Empty) => (),
+    let token = CancellationToken::new();
+    let cloned_token = token.clone();
+    let handle = tokio::spawn(async move {
+        cloned_token
+            .run_until_cancelled(async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(60)).await;
+
+                    if let Err(error) = try_update_website(&config).await {
+                        tracing::error!("try update website failed: {error}");
+                    }
                 }
-                thread::sleep(Duration::from_secs(1));
-            }
-
-            if !hugo_server::fetch_and_no_change(&repo)? {
-                tracing::info!("The website has been updated and will be rebuilt");
-
-                repo = clone_and_build(&repo_url, &config.hugo.repo_dst, &build_dst)?;
-                upload_algolia_records(&build_dst, &config)?;
-
-                tracing::info!("Website update completed");
-            }
-        }
-
-        anyhow::Ok(())
+            })
+            .await
     });
 
     axum_server::bind_rustls(addr, https_config)
@@ -82,44 +65,52 @@ async fn main() -> Result<()> {
         .serve(router.into_make_service())
         .await?;
 
-    tx.send(())?;
-    handle.await??;
+    token.cancel();
+    handle.await?;
 
     Ok(())
 }
 
-fn clone_and_build(repo_url: &Url, repo_dst: &Path, build_dst: &Path) -> Result<Repository> {
-    if repo_dst.is_dir() {
+async fn init_website(config: &Config) -> Result<()> {
+    if config.repo_dst()?.is_dir() {
         tracing::warn!(
-            "This repository directory exists and will be deleted: {}",
-            repo_dst.display()
+            "This repository directory exists and will be deleted: `{}`",
+            config.repo_dst()?.display()
         );
-        fs::remove_dir_all(repo_dst)?;
+        fs::remove_dir_all(config.repo_dst()?).await?;
     }
 
-    tracing::info!("Repo clone into {}", repo_dst.display());
-    let repo = hugo_server::clone(repo_url, repo_dst)?;
+    tracing::info!("Repo clone into `{}`", config.repo_dst()?.display());
+    hugo_server::clone(config).await?;
 
-    tracing::info!("Hugo build into {}", build_dst.display());
-    let repo_dst = repo_dst.to_str().unwrap();
-    cmd_lib::run_cmd!(
-        cd $repo_dst;
-        hugo build --minify --quiet --destination $build_dst;
-    )?;
+    tracing::info!("Hugo build into `{}`", config.build_dst()?.display());
+    hugo_server::hugo_build(config).await?;
 
-    Ok(repo)
+    if config.algolia_records_file()?.is_file() {
+        tracing::info!(
+            "Begin uploading Algolia records: `{}`",
+            config.algolia_records_file()?.display()
+        );
+        hugo_server::upload_algolia_records(config).await?;
+    } else {
+        tracing::warn!(
+            "Cannot find Algolia records file: `{}`",
+            config.algolia_records_file()?.display()
+        );
+    }
+
+    Ok(())
 }
 
-fn upload_algolia_records(build_dst: &Path, config: &Config) -> Result<()> {
-    let algolia_json = build_dst.join("algolia.json");
-    if algolia_json.is_file() {
-        tracing::info!("Begin uploading Algolia records");
+async fn try_update_website(config: &Config) -> Result<()> {
+    if hugo_server::has_remote_update(config).await? {
+        tracing::info!("The website has been updated and will be rebuilt");
 
-        let client = AlgoliaClient::build(&config.algolia.application_id, &config.algolia.api_key)?;
-        client.delete_all_records(&config.algolia.index_name)?;
-        client.add_records(&config.algolia.index_name, algolia_json)?;
-    } else {
-        tracing::warn!("Cannot find Algolia records: {}", algolia_json.display());
+        hugo_server::pull(config).await?;
+        hugo_server::hugo_build(config).await?;
+        hugo_server::upload_algolia_records(config).await?;
+
+        tracing::info!("Website update completed");
     }
 
     Ok(())

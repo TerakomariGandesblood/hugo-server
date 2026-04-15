@@ -1,7 +1,7 @@
 mod algolia;
 mod args;
+mod cmd;
 mod config;
-mod git;
 mod log;
 mod router;
 
@@ -14,8 +14,8 @@ use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum_server::Handle;
+pub use cmd::*;
 pub use config::*;
-pub use git::*;
 pub use log::*;
 pub use router::*;
 use serde::Serialize;

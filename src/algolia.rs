@@ -1,35 +1,40 @@
-use std::fs;
-use std::path::Path;
 use std::time::Duration;
 
 use anyhow::Result;
+use once_cell::sync::OnceCell;
 use reqwest::header::{ACCEPT, HeaderMap, HeaderValue};
 use reqwest::{Client, redirect};
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
-use tokio::task;
+use tokio::fs;
+
+use crate::Config;
+
+pub async fn upload_algolia_records(config: &Config) -> Result<()> {
+    static CLIENT: OnceCell<AlgoliaClient> = OnceCell::new();
+    let client = CLIENT.get_or_try_init(|| AlgoliaClient::build(config))?;
+
+    client.delete_all_records(config).await?;
+    client.add_records(config).await?;
+
+    Ok(())
+}
 
 #[must_use]
-pub struct AlgoliaClient {
+struct AlgoliaClient {
     client: Client,
-    application_id: String,
 }
 
 impl AlgoliaClient {
-    pub fn build<T, E>(application_id: T, api_key: E) -> Result<Self>
-    where
-        T: AsRef<str>,
-        E: AsRef<str>,
-    {
-        let mut headers = HeaderMap::new();
+    fn build(config: &Config) -> Result<Self> {
+        let mut headers = HeaderMap::with_capacity(3);
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         headers.insert(
             "x-algolia-application-id",
-            HeaderValue::from_str(application_id.as_ref())?,
+            HeaderValue::from_str(&config.algolia.application_id)?,
         );
         headers.insert(
             "x-algolia-api-key",
-            HeaderValue::from_str(api_key.as_ref())?,
+            HeaderValue::from_str(&config.algolia.api_key)?,
         );
 
         let client = Client::builder()
@@ -39,39 +44,24 @@ impl AlgoliaClient {
             .timeout(Duration::from_secs(60))
             .build()?;
 
-        Ok(Self {
-            client,
-            application_id: application_id.as_ref().to_string(),
-        })
+        Ok(Self { client })
     }
 
-    pub fn delete_all_records<T>(&self, index_name: T) -> Result<()>
-    where
-        T: AsRef<str>,
-    {
-        task::block_in_place(move || {
-            Handle::current().block_on(async move {
-                self.client
-                    .post(format!(
-                        "https://{}.algolia.net/1/indexes/{}/clear",
-                        self.application_id,
-                        index_name.as_ref()
-                    ))
-                    .send()
-                    .await?
-                    .error_for_status()
-            })
-        })?;
+    async fn delete_all_records(&self, config: &Config) -> Result<()> {
+        self.client
+            .post(format!(
+                "https://{}.algolia.net/1/indexes/{}/clear",
+                config.algolia.application_id, config.algolia.index_name
+            ))
+            .send()
+            .await?
+            .error_for_status()?;
 
         Ok(())
     }
 
-    pub fn add_records<T, E>(&self, index_name: T, path: E) -> Result<()>
-    where
-        T: AsRef<str>,
-        E: AsRef<Path>,
-    {
-        let json = fs::read_to_string(path)?;
+    async fn add_records(&self, config: &Config) -> Result<()> {
+        let json = fs::read_to_string(config.algolia_records_file()?).await?;
         let bodys: Vec<BatchRequestBody> = sonic_rs::from_str(&json)?;
 
         let mut batch_data = BatchData {
@@ -84,20 +74,15 @@ impl AlgoliaClient {
             });
         }
 
-        task::block_in_place(move || {
-            Handle::current().block_on(async move {
-                self.client
-                    .post(format!(
-                        "https://{}.algolia.net/1/indexes/{}/batch",
-                        self.application_id,
-                        index_name.as_ref()
-                    ))
-                    .json(&batch_data)
-                    .send()
-                    .await?
-                    .error_for_status()
-            })
-        })?;
+        self.client
+            .post(format!(
+                "https://{}.algolia.net/1/indexes/{}/batch",
+                config.algolia.application_id, config.algolia.index_name
+            ))
+            .json(&batch_data)
+            .send()
+            .await?
+            .error_for_status()?;
 
         Ok(())
     }
