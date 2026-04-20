@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/TerakomariGandesblood/hugo-server/compare/v0.5.0...v0.5.1) - 2026-04-20
+
+### <!-- 0 -->🚀 Features
+
+- add timeout to command execution
+- add http cache
+
+### <!-- 1 -->🐛 Bug Fixes
+
+- conditionally upload Algolia records during website update
+
+### <!-- 2 -->🚜 Refactor
+
+- remove metrics tracking
+
 ## [0.5.0](https://github.com/TerakomariGandesblood/hugo-server/compare/v0.4.0...v0.5.0) - 2026-04-15
 
 ### <!-- 2 -->🚜 Refactor
