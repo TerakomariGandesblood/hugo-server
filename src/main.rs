@@ -108,7 +108,9 @@ async fn try_update_website(config: &Config) -> Result<()> {
 
         hugo_server::pull(config).await?;
         hugo_server::hugo_build(config).await?;
-        hugo_server::upload_algolia_records(config).await?;
+        if config.algolia_records_file()?.is_file() {
+            hugo_server::upload_algolia_records(config).await?;
+        }
 
         tracing::info!("Website update completed");
     }
