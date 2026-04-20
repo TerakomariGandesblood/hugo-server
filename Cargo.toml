@@ -2,7 +2,7 @@
 name = "hugo-server"
 version = "0.5.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.91"
 license = "MIT OR Apache-2.0"
 authors = ["Terakomari <im.terakomari@icloud.com>"]
 repository = "https://github.com/TerakomariGandesblood/hugo-server"
@@ -17,13 +17,13 @@ unsafe_code = "forbid"
 
 [dependencies]
 # https://github.com/purpleprotocol/mimalloc_rust
-mimalloc = { version = "0.1.48", default-features = false }
+mimalloc = { version = "0.1.49", default-features = false }
 # https://github.com/dtolnay/anyhow
 anyhow = { version = "1.0.102", default-features = false, features = ["std"] }
 # https://github.com/zkat/supports-color
 supports-color = { version = "3.0.2", default-features = false }
 # https://github.com/clap-rs/clap
-clap = { version = "4.6.0", default-features = false, features = [
+clap = { version = "4.6.1", default-features = false, features = [
   "std",
   "color",
   "help",
@@ -53,7 +53,7 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
   "env-filter",
 ] }
 # https://github.com/tokio-rs/tracing/tree/main/tracing-appender
-tracing-appender = { version = "0.2.4", default-features = false }
+tracing-appender = { version = "0.2.5", default-features = false }
 # https://github.com/serde-rs/serde/tree/master/serde
 serde = { version = "1.0.228", default-features = false, features = [
   "std",
@@ -79,7 +79,7 @@ jiff = { version = "0.2.23", default-features = false, features = [
   "perf-inline",
 ] }
 # https://github.com/tokio-rs/tokio/tree/master/tokio
-tokio = { version = "1.52.0", default-features = false, features = [
+tokio = { version = "1.52.1", default-features = false, features = [
   "macros",
   "signal",
   "process",
@@ -132,6 +132,16 @@ simdutf8 = { version = "0.1.5", default-features = false, features = [
 ] }
 # https://github.com/matklad/once_cell
 once_cell = { version = "1.21.4", default-features = false, features = ["std"] }
+# https://github.com/06chaynes/http-cache/blob/main/http-cache
+http-cache = { version = "1.0.0-alpha.6", default-features = false, features = [
+  "manager-moka",
+  "url-standard",
+] }
+# https://github.com/06chaynes/http-cache/blob/main/http-cache-tower-server
+http-cache-tower-server = { version = "0.2.3", default-features = false, features = [
+  "manager-moka",
+  "url-standard",
+] }
 
 [dev-dependencies]
 # https://github.com/dbrgn/tracing-test/tree/main/tracing-test
