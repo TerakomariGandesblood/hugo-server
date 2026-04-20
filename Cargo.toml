@@ -82,6 +82,7 @@ jiff = { version = "0.2.23", default-features = false, features = [
 tokio = { version = "1.52.1", default-features = false, features = [
   "macros",
   "signal",
+  "time",
   "process",
   "rt-multi-thread",
 ] }

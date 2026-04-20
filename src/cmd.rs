@@ -1,5 +1,6 @@
 use std::env;
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::Result;
 use tokio::process::Command;
@@ -65,11 +66,14 @@ async fn run_cmd<T>(program: &str, args: &[&str], current_dir: T) -> Result<Stri
 where
     T: AsRef<Path>,
 {
-    let output = Command::new(program)
-        .args(args)
-        .current_dir(current_dir)
-        .output()
-        .await?;
+    let output = tokio::time::timeout(
+        Duration::from_secs(120),
+        Command::new(program)
+            .args(args)
+            .current_dir(current_dir)
+            .output(),
+    )
+    .await??;
 
     if !output.status.success() {
         anyhow::bail!(
