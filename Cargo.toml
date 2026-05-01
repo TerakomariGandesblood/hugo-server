@@ -17,7 +17,7 @@ unsafe_code = "forbid"
 
 [dependencies]
 # https://github.com/purpleprotocol/mimalloc_rust
-mimalloc = { version = "0.1.49", default-features = false }
+mimalloc = { version = "0.1.50", default-features = false }
 # https://github.com/dtolnay/anyhow
 anyhow = { version = "1.0.102", default-features = false, features = ["std"] }
 # https://github.com/zkat/supports-color
@@ -38,7 +38,7 @@ clap = { version = "4.6.1", default-features = false, features = [
 # https://github.com/clap-rs/clap-verbosity-flag
 clap-verbosity-flag = { version = "3.0.4", default-features = false }
 # https://github.com/clap-rs/clap/tree/master/clap_complete
-clap_complete = { version = "4.6.2", default-features = false }
+clap_complete = { version = "4.6.3", default-features = false }
 # https://github.com/clap-rs/clap/tree/master/clap_complete_nushell
 clap_complete_nushell = { version = "4.6.0", default-features = false }
 # https://github.com/tokio-rs/tracing/tree/main/tracing
@@ -74,7 +74,7 @@ url = { version = "2.5.8", default-features = false, features = [
   "serde",
 ] }
 # https://github.com/BurntSushi/jiff
-jiff = { version = "0.2.23", default-features = false, features = [
+jiff = { version = "0.2.24", default-features = false, features = [
   "std",
   "perf-inline",
 ] }
@@ -114,7 +114,7 @@ tower-http = { version = "0.6.8", default-features = false, features = [
   "fs",
 ] }
 # https://github.com/seanmonstar/reqwest
-reqwest = { version = "0.13.2", default-features = false, features = [
+reqwest = { version = "0.13.3", default-features = false, features = [
   "http2",
   "rustls",
   "gzip",
