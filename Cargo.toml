@@ -74,7 +74,7 @@ url = { version = "2.5.8", default-features = false, features = [
   "serde",
 ] }
 # https://github.com/BurntSushi/jiff
-jiff = { version = "0.2.25", default-features = false, features = [
+jiff = { version = "0.2.28", default-features = false, features = [
   "std",
   "perf-inline",
 ] }
@@ -133,16 +133,6 @@ simdutf8 = { version = "0.1.5", default-features = false, features = [
 ] }
 # https://github.com/matklad/once_cell
 once_cell = { version = "1.21.4", default-features = false, features = ["std"] }
-# https://github.com/06chaynes/http-cache/blob/main/http-cache
-http-cache = { version = "1.0.0-alpha.6", default-features = false, features = [
-  "manager-moka",
-  "url-standard",
-] }
-# https://github.com/06chaynes/http-cache/blob/main/http-cache-tower-server
-http-cache-tower-server = { version = "0.2.3", default-features = false, features = [
-  "manager-moka",
-  "url-standard",
-] }
 
 [dev-dependencies]
 # https://github.com/dbrgn/tracing-test/tree/main/tracing-test
