@@ -104,14 +104,19 @@ axum-server = { version = "0.8.0", default-features = false, features = [
 tower = { version = "0.5.3", default-features = false, features = [
   "limit",
   "load-shed",
-  "timeout",
 ] }
 # https://github.com/tower-rs/tower-http/tree/main/tower-http
-tower-http = { version = "0.6.11", default-features = false, features = [
+tower-http = { version = "0.7.0", default-features = false, features = [
   "compression-full",
+  "csrf",
   "decompression-full",
-  "trace",
   "fs",
+  "on-early-drop",
+  "request-id",
+  "sensitive-headers",
+  "timeout",
+  "trace",
+  "util",
 ] }
 # https://github.com/seanmonstar/reqwest
 reqwest = { version = "0.13.4", default-features = false, features = [
@@ -125,7 +130,7 @@ reqwest = { version = "0.13.4", default-features = false, features = [
   "system-proxy",
 ] }
 # https://github.com/harryfei/which-rs
-which = { version = "8.0.2", default-features = false, features = ["real-sys"] }
+which = { version = "8.0.3", default-features = false, features = ["real-sys"] }
 # https://github.com/rusticstuff/simdutf8
 simdutf8 = { version = "0.1.5", default-features = false, features = [
   "std",
@@ -133,6 +138,12 @@ simdutf8 = { version = "0.1.5", default-features = false, features = [
 ] }
 # https://github.com/matklad/once_cell
 once_cell = { version = "1.21.4", default-features = false, features = ["std"] }
+# https://github.com/uuid-rs/uuid
+uuid = { version = "1.23.3", default-features = false, features = [
+  "std",
+  "v4",
+  "fast-rng",
+] }
 
 [dev-dependencies]
 # https://github.com/dbrgn/tracing-test/tree/main/tracing-test

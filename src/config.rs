@@ -102,6 +102,7 @@ impl Config {
 #[must_use]
 #[derive(Deserialize)]
 pub struct ServerConfig {
+    pub url: Url,
     pub host: Ipv4Addr,
     pub port: u16,
 }

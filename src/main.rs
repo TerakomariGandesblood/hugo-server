@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
 
     init_website(&config).await?;
 
-    let router = hugo_server::router(config.build_dst()?);
+    let router = hugo_server::router(config.build_dst()?, &config.server.url)?;
     let addr = SocketAddr::new(IpAddr::V4(config.server.host), config.server.port);
     let https_config =
         RustlsConfig::from_pem_file(&config.https.cert_path, &config.https.key_path).await?;
