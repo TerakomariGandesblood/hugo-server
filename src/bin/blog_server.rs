@@ -9,7 +9,7 @@ use axum_server::tls_rustls::RustlsConfig;
 use blog::Config;
 use clap::Parser;
 use mimalloc::MiMalloc;
-use servers::Args;
+use my_servers::Args;
 use tokio::fs;
 use tokio_util::sync::CancellationToken;
 
@@ -21,11 +21,11 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     if let Some(shell) = args.completion {
-        servers::generate_completion(shell)?;
+        my_servers::generate_completion(shell)?;
         return Ok(());
     }
 
-    let _guard = servers::init_log(&args.verbose, "log")?;
+    let _guard = my_servers::init_log(&args.verbose, "log")?;
 
     let config = Config::load_config(".blog_server_config.toml")?;
 
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
         RustlsConfig::from_pem_file(&config.https.cert_path, &config.https.key_path).await?;
 
     let server_handle = Handle::new();
-    tokio::spawn(servers::shutdown_signal(server_handle.clone()));
+    tokio::spawn(my_servers::shutdown_signal(server_handle.clone()));
 
     tracing::info!(
         "Web Server is available at https://localhost:{}/ (bind address {})",
