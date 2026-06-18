@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/TerakomariGandesblood/my-servers/compare/v0.6.1...v0.6.2) - 2026-06-18
+
+### <!-- 1 -->🐛 Bug Fixes
+
+- update CD workflow to use only file_server
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- disable github release
+
 ## [0.6.1](https://github.com/TerakomariGandesblood/hugo-server/compare/v0.6.0...v0.6.1) - 2026-06-18
 
 ### <!-- 0 -->🚀 Features
