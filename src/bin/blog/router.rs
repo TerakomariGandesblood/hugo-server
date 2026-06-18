@@ -8,6 +8,7 @@ use axum::http::{Request, StatusCode, header};
 use axum::response::IntoResponse;
 use axum::{BoxError, Router};
 use tower::ServiceBuilder;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::csrf::CsrfLayer;
 use tower_http::on_early_drop::{EarlyDropsAsFailures, OnEarlyDropLayer};
 use tower_http::request_id::{MakeRequestId, RequestId};
@@ -39,6 +40,7 @@ where
         )
         .propagate_x_request_id()
         .layer(HandleErrorLayer::new(handle_error))
+        .layer(CatchPanicLayer::new())
         .layer(OnEarlyDropLayer::new(EarlyDropsAsFailures::new(
             DefaultOnFailure::default(),
         )))

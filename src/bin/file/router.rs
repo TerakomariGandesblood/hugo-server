@@ -20,6 +20,7 @@ use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio_util::io::{ReaderStream, StreamReader};
 use tower::ServiceBuilder;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::csrf::CsrfLayer;
 use tower_http::on_early_drop::{EarlyDropsAsFailures, OnEarlyDropGuard, OnEarlyDropLayer};
 use tower_http::request_id::{MakeRequestId, RequestId};
@@ -51,6 +52,7 @@ pub fn router(config: &Config) -> Result<Router> {
         )
         .propagate_x_request_id()
         .layer(HandleErrorLayer::new(handle_error))
+        .layer(CatchPanicLayer::new())
         .layer(OnEarlyDropLayer::new(EarlyDropsAsFailures::new(
             DefaultOnFailure::default(),
         )))

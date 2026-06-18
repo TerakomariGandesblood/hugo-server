@@ -127,6 +127,7 @@ tower = { version = "0.5.3", default-features = false, features = [
 ] }
 # https://github.com/tower-rs/tower-http/tree/main/tower-http
 tower-http = { version = "0.7.0", default-features = false, features = [
+  "catch-panic",
   "compression-full",
   "csrf",
   "decompression-full",
