@@ -112,7 +112,7 @@ axum = { version = "0.8.9", default-features = false, features = [
   "tracing",
 ] }
 # https://github.com/tokio-rs/axum/blob/main/axum-extra
-axum-extra = { version = "*", default-features = false, features = [
+axum-extra = { version = "0.12.6", default-features = false, features = [
   "file-stream",
   "tracing",
 ] }
