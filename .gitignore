@@ -16,7 +16,6 @@ target/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-blog/
-log/
-.config.toml
+.blog_server_config.toml
+.file_server_config.toml
 certs/

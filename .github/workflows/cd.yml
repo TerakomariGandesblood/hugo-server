@@ -1,0 +1,16 @@
+name: CD
+
+permissions:
+  contents: read
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  cd:
+    permissions:
+      contents: write
+    uses: TerakomariGandesblood/github-workflows/.github/workflows/rust-cd.yml@main
+    with:
+      bin: blog_server, file_server

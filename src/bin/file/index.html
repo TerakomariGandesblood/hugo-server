@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件管理</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 800px;
+        margin: 20px 0;
+        padding: 0 20px;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      button {
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      .download-btn {
+        min-width: 84px;
+        padding: 6px 18px;
+      }
+      .upload-section {
+        margin-top: 30px;
+      }
+      .waiting-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1000;
+      }
+      .waiting-overlay.visible {
+        display: flex;
+      }
+      .waiting-dialog {
+        min-width: 240px;
+        padding: 24px 28px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+      .waiting-spinner {
+        width: 36px;
+        height: 36px;
+        margin: 0 auto 16px;
+        border: 4px solid #d9d9d9;
+        border-top-color: #4caf50;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .waiting-text {
+        margin: 0;
+        color: #333;
+      }
+      #upload-btn {
+        padding: 10px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #upload-btn:hover {
+        background-color: #45a049;
+      }
+      #upload-btn:disabled {
+        background-color: #8bc68e;
+        cursor: not-allowed;
+      }
+      #file-input {
+        display: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="waiting-overlay"
+      class="waiting-overlay"
+      aria-live="polite"
+      aria-hidden="true"
+    >
+      <div class="waiting-dialog" role="alertdialog" aria-label="上传中">
+        <div class="waiting-spinner" aria-hidden="true"></div>
+        <p class="waiting-text">文件上传中，请稍候...</p>
+      </div>
+    </div>
+
+    <h2>文件列表</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>文件名</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="file-list"></tbody>
+    </table>
+
+    <div class="upload-section">
+      <h2>上传文件</h2>
+      <input type="file" id="file-input" />
+      <button id="upload-btn">选择文件并上传</button>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const fileListBody = document.getElementById("file-list");
+        const uploadButton = document.getElementById("upload-btn");
+        const fileInput = document.getElementById("file-input");
+        const waitingOverlay = document.getElementById("waiting-overlay");
+
+        function setUploadingState(isUploading) {
+          uploadButton.disabled = isUploading;
+          waitingOverlay.classList.toggle("visible", isUploading);
+          waitingOverlay.setAttribute("aria-hidden", String(!isUploading));
+        }
+
+        async function fetchAndDisplayFiles() {
+          try {
+            const response = await fetch("/api/list");
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const files = await response.json();
+
+            fileListBody.innerHTML = "";
+
+            if (files.length === 0) {
+              const row = fileListBody.insertRow();
+              const cell = row.insertCell();
+              cell.colSpan = 3;
+              cell.textContent = "没有可用的文件。";
+              cell.style.textAlign = "center";
+            } else {
+              files.forEach((file) => {
+                const row = fileListBody.insertRow();
+
+                const nameCell = row.insertCell();
+                nameCell.textContent = file.file_name;
+
+                const timeCell = row.insertCell();
+                timeCell.textContent = file.create_time;
+
+                const actionCell = row.insertCell();
+                const downloadButton = document.createElement("button");
+                downloadButton.className = "download-btn";
+                downloadButton.textContent = "下载";
+                downloadButton.onclick = () => {
+                  window.location.href = "/" + file.path;
+                };
+                actionCell.appendChild(downloadButton);
+              });
+            }
+          } catch (error) {
+            console.error("获取文件列表失败：", error);
+            fileListBody.innerHTML =
+              '<tr><td colspan="3" style="color: red; text-align: center;">无法加载文件列表。</td></tr>';
+          }
+        }
+
+        async function uploadFile(file) {
+          const formData = new FormData();
+          formData.append("file", file);
+          setUploadingState(true);
+
+          try {
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              alert("文件上传成功！");
+              fetchAndDisplayFiles();
+            } else {
+              const errorText = await response.text();
+              alert(`文件上传失败：${errorText}`);
+            }
+          } catch (error) {
+            console.error("上传失败：", error);
+            alert("文件上传失败，请检查网络连接或联系管理员。");
+          } finally {
+            setUploadingState(false);
+          }
+        }
+
+        uploadButton.addEventListener("click", () => {
+          fileInput.click();
+        });
+
+        fileInput.addEventListener("change", () => {
+          const selectedFile = fileInput.files[0];
+          if (selectedFile) {
+            uploadFile(selectedFile);
+          }
+          fileInput.value = "";
+        });
+
+        fetchAndDisplayFiles();
+      });
+    </script>
+  </body>
+</html>

@@ -2,7 +2,7 @@
 
 [changelog]
 commit_preprocessors = [
-  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/TerakomariGandesblood/hugo-server/issues/${2}))" },
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/TerakomariGandesblood/my-servers/issues/${2}))" },
 ]
 
 commit_parsers = [

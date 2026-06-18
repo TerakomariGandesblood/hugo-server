@@ -1,15 +1,15 @@
 [package]
-name = "hugo-server"
-version = "0.5.2"
+name = "my-servers"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
 license = "MIT OR Apache-2.0"
 authors = ["Terakomari <im.terakomari@icloud.com>"]
-repository = "https://github.com/TerakomariGandesblood/hugo-server"
-homepage = "https://github.com/TerakomariGandesblood/hugo-server"
-description = "A hugo server"
+repository = "https://github.com/TerakomariGandesblood/my-servers"
+homepage = "https://github.com/TerakomariGandesblood/my-servers"
+description = "A collection of servers"
 readme = "README.md"
-keywords = ["hugo", "server", "http"]
+keywords = ["server", "http"]
 categories = ["command-line-utilities"]
 
 [lints.rust]
@@ -73,10 +73,20 @@ url = { version = "2.5.8", default-features = false, features = [
   "std",
   "serde",
 ] }
+# https://github.com/kardeiz/sanitize-filename
+sanitize-filename = { version = "0.6.0", default-features = false }
+# https://github.com/BurntSushi/walkdir
+walkdir = { version = "2.5.0", default-features = false }
 # https://github.com/BurntSushi/jiff
 jiff = { version = "0.2.28", default-features = false, features = [
   "std",
+  "tz-system",
+  "tz-fat",
+  "tzdb-bundle-platform",
+  "tzdb-zoneinfo",
+  "tzdb-concatenated",
   "perf-inline",
+  "serde",
 ] }
 # https://github.com/tokio-rs/tokio/tree/master/tokio
 tokio = { version = "1.52.3", default-features = false, features = [
@@ -88,12 +98,22 @@ tokio = { version = "1.52.3", default-features = false, features = [
 ] }
 # https://github.com/tokio-rs/tokio/tree/master/tokio-util
 tokio-util = { version = "0.7.18", default-features = false }
+# https://github.com/rust-lang/futures-rs/blob/master/futures-util
+futures-util = { version = "0.3.32", default-features = false, features = [
+  "std",
+] }
 # https://github.com/tokio-rs/axum
 axum = { version = "0.8.9", default-features = false, features = [
   "http2",
   "json",
+  "multipart",
   "tokio",
   "tower-log",
+  "tracing",
+] }
+# https://github.com/tokio-rs/axum/blob/main/axum-extra
+axum-extra = { version = "*", default-features = false, features = [
+  "file-stream",
   "tracing",
 ] }
 # https://github.com/programatik29/axum-server
@@ -130,7 +150,7 @@ reqwest = { version = "0.13.4", default-features = false, features = [
   "system-proxy",
 ] }
 # https://github.com/harryfei/which-rs
-which = { version = "8.0.3", default-features = false, features = ["real-sys"] }
+which = { version = "8.0.4", default-features = false, features = ["real-sys"] }
 # https://github.com/rusticstuff/simdutf8
 simdutf8 = { version = "0.1.5", default-features = false, features = [
   "std",

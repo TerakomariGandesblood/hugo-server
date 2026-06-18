@@ -74,8 +74,8 @@ impl MakeRequestId for UuidRequestId {
 
 async fn handle_error(error: BoxError) -> impl IntoResponse {
     if error.is::<tower::load_shed::error::Overloaded>() {
-        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+        return StatusCode::SERVICE_UNAVAILABLE;
     }
 
-    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    StatusCode::INTERNAL_SERVER_ERROR
 }

@@ -1,23 +1,15 @@
-mod algolia;
 mod args;
-mod cmd;
-mod config;
 mod log;
-mod router;
 
 use std::net::SocketAddr;
 use std::time::Duration;
 
-pub use algolia::*;
 pub use args::*;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum_server::Handle;
-pub use cmd::*;
-pub use config::*;
 pub use log::*;
-pub use router::*;
 use serde::Serialize;
 use tokio::signal;
 
@@ -26,7 +18,7 @@ struct ErrorResponse {
     message: String,
 }
 
-pub struct ServerError(StatusCode, anyhow::Error);
+pub struct ServerError(pub StatusCode, pub anyhow::Error);
 
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {

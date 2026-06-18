@@ -7,7 +7,7 @@ creating a new issue before making the change.
 
 ## Reporting issues
 
-Before reporting an issue on the [issue tracker](https://github.com/TerakomariGandesblood/hugo-server/issues),
+Before reporting an issue on the [issue tracker](https://github.com/TerakomariGandesblood/my-servers/issues),
 please check that it has not already been reported by searching for some related keywords.
 
 ## Pull requests
@@ -50,7 +50,7 @@ A specification for adding human and machine readable meaning to commit messages
 This is no different than other Rust projects.
 
 ```shell
-git clone https://github.com/TerakomariGandesblood/hugo-server
+git clone https://github.com/TerakomariGandesblood/my-servers
 cd cli
 cargo test
 ```

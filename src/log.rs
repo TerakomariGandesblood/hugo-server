@@ -23,9 +23,9 @@ where
             "none".into()
         } else {
             format!(
-                "{}={1},tower_http={1},axum::rejection=trace",
-                env!("CARGO_CRATE_NAME"),
+                "{1}={0},blog_server={0},file_server={0},tower_http={0},axum::rejection=trace",
                 verbose.filter(),
+                env!("CARGO_CRATE_NAME"),
             )
             .into()
         }

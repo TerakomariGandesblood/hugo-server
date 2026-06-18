@@ -1,12 +1,15 @@
+mod blog;
+
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 
 use anyhow::Result;
 use axum_server::Handle;
 use axum_server::tls_rustls::RustlsConfig;
+use blog::Config;
 use clap::Parser;
-use hugo_server::{Args, Config};
 use mimalloc::MiMalloc;
+use servers::Args;
 use tokio::fs;
 use tokio_util::sync::CancellationToken;
 
@@ -18,25 +21,25 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     if let Some(shell) = args.completion {
-        hugo_server::generate_completion(shell)?;
+        servers::generate_completion(shell)?;
         return Ok(());
     }
 
-    let _guard = hugo_server::init_log(&args.verbose, "log")?;
+    let _guard = servers::init_log(&args.verbose, "log")?;
 
-    let config = Config::load_config(".config.toml")?;
+    let config = Config::load_config(".blog_server_config.toml")?;
 
-    hugo_server::check_cmd()?;
+    blog::check_cmd()?;
 
     init_website(&config).await?;
 
-    let router = hugo_server::router(config.build_dst()?, &config.server.url)?;
+    let router = blog::router(config.build_dst()?, &config.server.url)?;
     let addr = SocketAddr::new(IpAddr::V4(config.server.host), config.server.port);
     let https_config =
         RustlsConfig::from_pem_file(&config.https.cert_path, &config.https.key_path).await?;
 
     let server_handle = Handle::new();
-    tokio::spawn(hugo_server::shutdown_signal(server_handle.clone()));
+    tokio::spawn(servers::shutdown_signal(server_handle.clone()));
 
     tracing::info!(
         "Web Server is available at https://localhost:{}/ (bind address {})",
@@ -81,17 +84,17 @@ async fn init_website(config: &Config) -> Result<()> {
     }
 
     tracing::info!("Repo clone into `{}`", config.repo_dst()?.display());
-    hugo_server::clone(config).await?;
+    blog::clone(config).await?;
 
     tracing::info!("Hugo build into `{}`", config.build_dst()?.display());
-    hugo_server::hugo_build(config).await?;
+    blog::hugo_build(config).await?;
 
     if config.algolia_records_file()?.is_file() {
         tracing::info!(
             "Begin uploading Algolia records: `{}`",
             config.algolia_records_file()?.display()
         );
-        hugo_server::upload_algolia_records(config).await?;
+        blog::upload_algolia_records(config).await?;
     } else {
         tracing::warn!(
             "Cannot find Algolia records file: `{}`",
@@ -103,13 +106,13 @@ async fn init_website(config: &Config) -> Result<()> {
 }
 
 async fn try_update_website(config: &Config) -> Result<()> {
-    if hugo_server::has_remote_update(config).await? {
+    if blog::has_remote_update(config).await? {
         tracing::info!("The website has been updated and will be rebuilt");
 
-        hugo_server::pull(config).await?;
-        hugo_server::hugo_build(config).await?;
+        blog::pull(config).await?;
+        blog::hugo_build(config).await?;
         if config.algolia_records_file()?.is_file() {
-            hugo_server::upload_algolia_records(config).await?;
+            blog::upload_algolia_records(config).await?;
         }
 
         tracing::info!("Website update completed");

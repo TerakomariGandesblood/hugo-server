@@ -1,8 +1,8 @@
-# hugo-server
+# my-servers
 
-[![Crates.io](https://img.shields.io/crates/l/hugo-server)](https://github.com/TerakomariGandesblood/hugo-server)
-[![Crates.io](https://img.shields.io/crates/v/hugo-server)](https://crates.io/crates/hugo-server)
+[![Crates.io](https://img.shields.io/crates/l/my-servers)](https://github.com/TerakomariGandesblood/my-servers)
+[![Crates.io](https://img.shields.io/crates/v/my-servers)](https://crates.io/crates/my-servers)
 
 ---
 
-A hugo server
+A collection of servers
