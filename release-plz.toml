@@ -1,8 +1,5 @@
 # https://release-plz.ieni.dev/docs/config
 
-[workspace]
-git_release_enable = false
-
 [changelog]
 commit_preprocessors = [
   { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/TerakomariGandesblood/my-servers/issues/${2}))" },
