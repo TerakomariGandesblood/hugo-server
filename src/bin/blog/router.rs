@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
@@ -5,7 +6,7 @@ use std::time::Duration;
 use anyhow::Result;
 use axum::body::Body;
 use axum::error_handling::HandleErrorLayer;
-use axum::extract::MatchedPath;
+use axum::extract::{ConnectInfo, MatchedPath};
 use axum::http::{Request, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::{BoxError, Router};
@@ -41,10 +42,16 @@ where
                 http.route = field::Empty,
                 http.response.status_code = field::Empty,
                 http.response.header = field::Empty,
+                network.peer.address = field::Empty,
+                network.peer.port = field::Empty,
             );
 
             if let Some(route) = request.extensions().get::<MatchedPath>() {
                 span.record("http.route", route.as_str().to_string());
+            }
+            if let Some(ConnectInfo(addr)) = request.extensions().get::<ConnectInfo<SocketAddr>>() {
+                span.record("network.peer.address", addr.ip().to_string());
+                span.record("network.peer.port", addr.port());
             }
 
             span

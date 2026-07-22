@@ -20,5 +20,4 @@ target/
 .file_server_config.toml
 certs/
 log
-blog
 uploads

@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
 
     axum_server::bind_rustls(addr, https_config)
         .handle(server_handle)
-        .serve(router.into_make_service())
+        .serve(router.into_make_service_with_connect_info::<SocketAddr>())
         .await?;
 
     token.cancel();
