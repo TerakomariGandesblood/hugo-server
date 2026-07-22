@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/TerakomariGandesblood/my-servers/compare/v0.6.2...v0.7.0) - 2026-07-22
+
+### <!-- 0 -->🚀 Features
+
+- add allow_upload_ip_nets config
+- record connect info
+- add opentelemetry
+
+### <!-- 2 -->🚜 Refactor
+
+- change otel.name
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- remove cd
+
 ## [0.6.2](https://github.com/TerakomariGandesblood/my-servers/compare/v0.6.1...v0.6.2) - 2026-06-18
 
 ### <!-- 1 -->🐛 Bug Fixes
