@@ -31,16 +31,10 @@ where
 
     let trace_layer = TraceLayer::new_for_http()
         .make_span_with(|request: &Request<Body>| {
-            let name = if let Some(target) = request.extensions().get::<MatchedPath>() {
-                format!("{} {}", request.method(), target.as_str())
-            } else {
-                request.method().to_string()
-            };
-
             let span = tracing::debug_span!(
                 "request",
                 version = field::debug(request.version()),
-                otel.name = name,
+                otel.name = format!("{} {}", request.method(), request.uri().path()),
                 http.request.method = field::display(request.method()),
                 url.path = request.uri().path(),
                 http.request.header = field::debug(request.headers()),
