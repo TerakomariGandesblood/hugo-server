@@ -12,7 +12,7 @@ use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, SdkTracerProvider};
 use opentelemetry_semantic_conventions::SCHEMA_URL;
 use opentelemetry_semantic_conventions::attribute::{DEPLOYMENT_ENVIRONMENT_NAME, SERVICE_VERSION};
 use supports_color::Stream;
-use tracing_appender::non_blocking::WorkerGuard;
+use tracing_appender::non_blocking::{NonBlockingBuilder, WorkerGuard};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::EnvFilter;
@@ -55,14 +55,18 @@ where
         .max_log_files(7)
         .build(log_directory)?;
 
-    let (file_writer, _file_guard) = tracing_appender::non_blocking(file_appender);
+    let (file_writer, _file_guard) = NonBlockingBuilder::default()
+        .lossy(false)
+        .finish(file_appender);
     let file_layer = Layer::new()
         .json()
         .with_writer(file_writer)
         .with_timer(JiffTimer)
         .with_ansi(false);
 
-    let (stderr_writer, _stderr_guard) = tracing_appender::non_blocking(io::stderr());
+    let (stderr_writer, _stderr_guard) = NonBlockingBuilder::default()
+        .lossy(false)
+        .finish(io::stderr());
     let stderr_layer = Layer::new()
         .with_writer(stderr_writer)
         .with_timer(JiffTimer)
