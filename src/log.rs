@@ -55,15 +55,16 @@ where
         .max_log_files(7)
         .build(log_directory)?;
 
-    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+    let (file_writer, _file_guard) = tracing_appender::non_blocking(file_appender);
     let file_layer = Layer::new()
         .json()
         .with_writer(file_writer)
         .with_timer(JiffTimer)
         .with_ansi(false);
 
+    let (stderr_writer, _stderr_guard) = tracing_appender::non_blocking(io::stderr());
     let stderr_layer = Layer::new()
-        .with_writer(io::stderr)
+        .with_writer(stderr_writer)
         .with_timer(JiffTimer)
         .with_ansi(supports_color::on(Stream::Stderr).is_some());
 
@@ -79,7 +80,8 @@ where
         .init();
 
     Ok(LogGuard {
-        _guard,
+        _file_guard,
+        _stderr_guard,
         tracer_provider,
     })
 }
@@ -127,7 +129,8 @@ fn resource() -> Result<Resource> {
 }
 
 pub struct LogGuard {
-    _guard: WorkerGuard,
+    _file_guard: WorkerGuard,
+    _stderr_guard: WorkerGuard,
     tracer_provider: SdkTracerProvider,
 }
 
