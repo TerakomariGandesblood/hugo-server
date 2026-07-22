@@ -18,6 +18,7 @@ struct ErrorResponse {
     message: String,
 }
 
+#[derive(Debug)]
 pub struct ServerError(pub StatusCode, pub anyhow::Error);
 
 impl IntoResponse for ServerError {

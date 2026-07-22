@@ -25,9 +25,9 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let _guard = my_servers::init_log(&args.verbose, "log")?;
-
     let config = Config::load_config(".blog_server_config.toml")?;
+
+    let _guard = my_servers::init_log(&args.verbose, &config.server.opentelemetry_endpoint, "log")?;
 
     blog::check_cmd()?;
 

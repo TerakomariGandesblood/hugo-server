@@ -1,12 +1,13 @@
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use std::{io, pin};
 
 use anyhow::Result;
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use axum::error_handling::HandleErrorLayer;
-use axum::extract::{self, DefaultBodyLimit, Multipart};
+use axum::extract::{self, DefaultBodyLimit, MatchedPath, Multipart};
 use axum::http::{Request, StatusCode, header};
 use axum::response::{Html, IntoResponse, Response};
 use axum::{BoxError, Json, Router, routing};
@@ -20,13 +21,14 @@ use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio_util::io::{ReaderStream, StreamReader};
 use tower::ServiceBuilder;
+use tower_http::ServiceBuilderExt;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::csrf::CsrfLayer;
 use tower_http::on_early_drop::{EarlyDropsAsFailures, OnEarlyDropGuard, OnEarlyDropLayer};
 use tower_http::request_id::{MakeRequestId, RequestId};
 use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnResponse, TraceLayer};
-use tower_http::{LatencyUnit, ServiceBuilderExt};
+use tower_http::trace::{DefaultOnFailure, TraceLayer};
+use tracing::{Span, field, instrument};
 use uuid::Uuid;
 use walkdir::WalkDir;
 
@@ -38,18 +40,46 @@ pub fn router(config: &Config) -> Result<Router> {
     let sensitive_headers: Arc<[_]> =
         vec![header::AUTHORIZATION, header::COOKIE, header::SET_COOKIE].into();
 
+    let trace_layer = TraceLayer::new_for_http()
+        .make_span_with(|request: &Request<Body>| {
+            let name = if let Some(target) = request.extensions().get::<MatchedPath>() {
+                format!("{} {}", request.method(), target.as_str())
+            } else {
+                request.method().to_string()
+            };
+
+            let span = tracing::debug_span!(
+                "request",
+                version = field::debug(request.version()),
+                otel.name = name,
+                http.request.method = field::display(request.method()),
+                url.path = request.uri().path(),
+                http.request.header = field::debug(request.headers()),
+                http.route = field::Empty,
+                http.response.status_code = field::Empty,
+                http.response.header = field::Empty,
+            );
+
+            if let Some(route) = request.extensions().get::<MatchedPath>() {
+                span.record("http.route", route.as_str().to_string());
+            }
+
+            span
+        })
+        .on_response(|response: &Response, _latency: Duration, span: &Span| {
+            span.record(
+                "http.response.status_code",
+                field::display(response.status()),
+            );
+            span.record("http.response.header", field::debug(response.headers()));
+
+            tracing::debug!(parent: span, "finished processing request");
+        });
+
     let middleware = ServiceBuilder::new()
         .sensitive_request_headers(sensitive_headers.clone())
         .set_x_request_id(UuidRequestId)
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                .on_response(
-                    DefaultOnResponse::new()
-                        .include_headers(true)
-                        .latency_unit(LatencyUnit::Micros),
-                ),
-        )
+        .layer(trace_layer)
         .propagate_x_request_id()
         .layer(HandleErrorLayer::new(handle_error))
         .layer(CatchPanicLayer::new())
@@ -106,6 +136,7 @@ async fn index() -> Html<&'static str> {
     Html(include_str!("./index.html"))
 }
 
+#[instrument(ret)]
 async fn upload(mut multipart: Multipart) -> Result<impl IntoResponse, ServerError> {
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
@@ -120,9 +151,10 @@ async fn upload(mut multipart: Multipart) -> Result<impl IntoResponse, ServerErr
     Ok(StatusCode::CREATED)
 }
 
+#[instrument(ret)]
 async fn stream_to_file<S, E>(file_name: &str, stream: S) -> Result<(), ServerError>
 where
-    S: Stream<Item = Result<Bytes, E>>,
+    S: Stream<Item = Result<Bytes, E>> + Debug,
     E: Into<BoxError>,
 {
     if !path_is_valid(file_name) {
@@ -177,6 +209,7 @@ fn path_is_valid(path: &str) -> bool {
     components.count() == 1
 }
 
+#[instrument(ret)]
 async fn file_stream(
     extract::Path(file_name): extract::Path<String>,
 ) -> Result<Response, ServerError> {
@@ -202,13 +235,14 @@ async fn file_stream(
     Ok(file_stream_resp.into_response())
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct FileInfo {
     path: PathBuf,
     file_name: String,
     create_time: Zoned,
 }
 
+#[instrument(ret)]
 async fn list() -> Result<Json<Vec<FileInfo>>, ServerError> {
     let mut files = Vec::new();
 

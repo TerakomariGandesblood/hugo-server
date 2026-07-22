@@ -19,3 +19,6 @@ target/
 .blog_server_config.toml
 .file_server_config.toml
 certs/
+log
+blog
+uploads

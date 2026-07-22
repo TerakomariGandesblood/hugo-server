@@ -1,8 +1,8 @@
 [build]
-rustflags = ["--deny", "warnings"]
+warnings = "deny"
 
 [target.x86_64-pc-windows-msvc]
-rustflags = ["--deny", "warnings", "--codegen", "target-feature=+crt-static"]
+rustflags = ["--codegen", "target-feature=+crt-static"]
 
 [profile.release]
 strip = true
