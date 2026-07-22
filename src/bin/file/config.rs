@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use anyhow::Result;
+use ipnet::IpNet;
 use serde::Deserialize;
 use url::Url;
 
@@ -70,6 +71,7 @@ pub struct ServerConfig {
     pub host: Ipv4Addr,
     pub port: u16,
     pub opentelemetry_endpoint: Url,
+    pub allow_upload_ip_nets: Vec<IpNet>,
 }
 
 #[must_use]

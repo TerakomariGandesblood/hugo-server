@@ -8,12 +8,13 @@ use std::{io, pin};
 use anyhow::Result;
 use axum::body::{Body, Bytes};
 use axum::error_handling::HandleErrorLayer;
-use axum::extract::{self, ConnectInfo, DefaultBodyLimit, MatchedPath, Multipart};
+use axum::extract::{self, ConnectInfo, DefaultBodyLimit, MatchedPath, Multipart, State};
 use axum::http::{Request, StatusCode, header};
 use axum::response::{Html, IntoResponse, Response};
 use axum::{BoxError, Json, Router, routing};
 use axum_extra::response::file_stream::FileStream;
 use futures_util::{Stream, TryStreamExt};
+use ipnet::IpNet;
 use jiff::tz::TimeZone;
 use jiff::{Timestamp, Zoned};
 use my_servers::ServerError;
@@ -110,7 +111,8 @@ pub fn router(config: &Config) -> Result<Router> {
             &format!("/{UPLOADS_DIRECTORY}/{{file_name}}"),
             routing::get(file_stream),
         )
-        .layer(middleware);
+        .layer(middleware)
+        .with_state(config.server.allow_upload_ip_nets.clone());
 
     Ok(router)
 }
@@ -138,7 +140,23 @@ async fn index() -> Html<&'static str> {
 }
 
 #[instrument(ret)]
-async fn upload(mut multipart: Multipart) -> Result<impl IntoResponse, ServerError> {
+async fn upload(
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(allow_upload_ip_nets): State<Vec<IpNet>>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, ServerError> {
+    let ip = addr.ip();
+
+    if !allow_upload_ip_nets
+        .iter()
+        .any(|allow_ip_net| allow_ip_net.contains(&ip))
+    {
+        return Err(ServerError(
+            StatusCode::FORBIDDEN,
+            anyhow::anyhow!("This IP address is not allowed to upload files"),
+        ));
+    }
+
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
