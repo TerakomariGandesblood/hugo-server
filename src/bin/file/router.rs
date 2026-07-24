@@ -8,10 +8,14 @@ use std::{io, pin};
 use anyhow::Result;
 use axum::body::{Body, Bytes};
 use axum::error_handling::HandleErrorLayer;
-use axum::extract::{self, ConnectInfo, DefaultBodyLimit, MatchedPath, Multipart, State};
+use axum::extract::{
+    self, ConnectInfo, DefaultBodyLimit, FromRequestParts, MatchedPath, Multipart, State,
+};
 use axum::http::{Request, StatusCode, header};
+use axum::middleware::Next;
 use axum::response::{Html, IntoResponse, Response};
-use axum::{BoxError, Json, Router, routing};
+use axum::{BoxError, Json, Router, middleware, routing};
+use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_extra::response::file_stream::FileStream;
 use futures_util::{Stream, TryStreamExt};
 use ipnet::IpNet;
@@ -55,15 +59,10 @@ pub fn router(config: &Config) -> Result<Router> {
                 http.response.status_code = field::Empty,
                 http.response.header = field::Empty,
                 network.peer.address = field::Empty,
-                network.peer.port = field::Empty,
             );
 
             if let Some(route) = request.extensions().get::<MatchedPath>() {
                 span.record("http.route", route.as_str().to_string());
-            }
-            if let Some(ConnectInfo(addr)) = request.extensions().get::<ConnectInfo<SocketAddr>>() {
-                span.record("network.peer.address", addr.ip().to_string());
-                span.record("network.peer.port", addr.port());
             }
 
             span
@@ -78,10 +77,25 @@ pub fn router(config: &Config) -> Result<Router> {
             tracing::debug!(parent: span, "finished processing request");
         });
 
+    let client_ip_layer = middleware::from_fn(async |request: extract::Request, next: Next| {
+        let (mut parts, body) = request.into_parts();
+        let span = Span::current();
+
+        if let Ok(ip) = ClientIp::from_request_parts(&mut parts, &()).await {
+            span.record("network.peer.address", ip.0.to_string());
+        } else if let Some(ConnectInfo(addr)) = parts.extensions.get::<ConnectInfo<SocketAddr>>() {
+            span.record("network.peer.address", addr.ip().to_string());
+        }
+
+        next.run(Request::from_parts(parts, body)).await
+    });
+
     let middleware = ServiceBuilder::new()
+        .layer(ClientIpSource::RightmostXForwardedFor.into_extension())
         .sensitive_request_headers(sensitive_headers.clone())
         .set_x_request_id(UuidRequestId)
         .layer(trace_layer)
+        .layer(client_ip_layer)
         .propagate_x_request_id()
         .layer(HandleErrorLayer::new(handle_error))
         .layer(CatchPanicLayer::new())

@@ -6,10 +6,12 @@ use std::time::Duration;
 use anyhow::Result;
 use axum::body::Body;
 use axum::error_handling::HandleErrorLayer;
-use axum::extract::{ConnectInfo, MatchedPath};
+use axum::extract::{self, ConnectInfo, FromRequestParts, MatchedPath};
 use axum::http::{Request, StatusCode, header};
+use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::{BoxError, Router};
+use axum::{BoxError, Router, middleware};
+use axum_client_ip::{ClientIp, ClientIpSource};
 use tower::ServiceBuilder;
 use tower_http::ServiceBuilderExt;
 use tower_http::catch_panic::CatchPanicLayer;
@@ -43,15 +45,10 @@ where
                 http.response.status_code = field::Empty,
                 http.response.header = field::Empty,
                 network.peer.address = field::Empty,
-                network.peer.port = field::Empty,
             );
 
             if let Some(route) = request.extensions().get::<MatchedPath>() {
                 span.record("http.route", route.as_str().to_string());
-            }
-            if let Some(ConnectInfo(addr)) = request.extensions().get::<ConnectInfo<SocketAddr>>() {
-                span.record("network.peer.address", addr.ip().to_string());
-                span.record("network.peer.port", addr.port());
             }
 
             span
@@ -66,10 +63,25 @@ where
             tracing::debug!(parent: span, "finished processing request");
         });
 
+    let client_ip_layer = middleware::from_fn(async |request: extract::Request, next: Next| {
+        let (mut parts, body) = request.into_parts();
+        let span = Span::current();
+
+        if let Ok(ip) = ClientIp::from_request_parts(&mut parts, &()).await {
+            span.record("network.peer.address", ip.0.to_string());
+        } else if let Some(ConnectInfo(addr)) = parts.extensions.get::<ConnectInfo<SocketAddr>>() {
+            span.record("network.peer.address", addr.ip().to_string());
+        }
+
+        next.run(Request::from_parts(parts, body)).await
+    });
+
     let middleware = ServiceBuilder::new()
+        .layer(ClientIpSource::RightmostXForwardedFor.into_extension())
         .sensitive_request_headers(sensitive_headers.clone())
         .set_x_request_id(UuidRequestId)
         .layer(trace_layer)
+        .layer(client_ip_layer)
         .propagate_x_request_id()
         .layer(HandleErrorLayer::new(handle_error))
         .layer(CatchPanicLayer::new())
