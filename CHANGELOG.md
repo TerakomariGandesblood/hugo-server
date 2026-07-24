@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/TerakomariGandesblood/my-servers/compare/v0.7.0...v0.7.1) - 2026-07-22
+
+### <!-- 2 -->🚜 Refactor
+
+- make non_blocking non-lossy
+- add non_blocking stderr_writer
+
 ## [0.7.0](https://github.com/TerakomariGandesblood/my-servers/compare/v0.6.2...v0.7.0) - 2026-07-22
 
 ### <!-- 0 -->🚀 Features
