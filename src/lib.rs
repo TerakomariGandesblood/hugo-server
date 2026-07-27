@@ -5,9 +5,9 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 pub use args::*;
-use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum_serde::Sonic;
 use axum_server::Handle;
 pub use log::*;
 use serde::Serialize;
@@ -30,7 +30,7 @@ impl IntoResponse for ServerError {
         } else {
             (
                 self.0,
-                Json(ErrorResponse {
+                Sonic(ErrorResponse {
                     message: self.1.to_string(),
                 }),
             )

@@ -14,9 +14,10 @@ use axum::extract::{
 use axum::http::{Request, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{Html, IntoResponse, Response};
-use axum::{BoxError, Json, Router, middleware, routing};
+use axum::{BoxError, Router, middleware, routing};
 use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_extra::response::file_stream::FileStream;
+use axum_serde::Sonic;
 use futures_util::{Stream, TryStreamExt};
 use ipnet::IpNet;
 use jiff::tz::TimeZone;
@@ -276,7 +277,7 @@ struct FileInfo {
 }
 
 #[instrument(ret)]
-async fn list() -> Result<Json<Vec<FileInfo>>, ServerError> {
+async fn list() -> Result<Sonic<Vec<FileInfo>>, ServerError> {
     let mut files = Vec::new();
 
     for entry in WalkDir::new(UPLOADS_DIRECTORY)
@@ -297,5 +298,5 @@ async fn list() -> Result<Json<Vec<FileInfo>>, ServerError> {
         });
     }
 
-    Ok(Json(files))
+    Ok(Sonic(files))
 }

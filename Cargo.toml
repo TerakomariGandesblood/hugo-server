@@ -101,7 +101,7 @@ sanitize-filename = { version = "0.6.0", default-features = false }
 # https://github.com/BurntSushi/walkdir
 walkdir = { version = "2.5.0", default-features = false }
 # https://github.com/BurntSushi/jiff
-jiff = { version = "0.2.34", default-features = false, features = [
+jiff = { version = "0.2.35", default-features = false, features = [
   "std",
   "tz-system",
   "tz-fat",
@@ -128,7 +128,6 @@ futures-util = { version = "0.3.33", default-features = false, features = [
 # https://github.com/tokio-rs/axum
 axum = { version = "0.8.9", default-features = false, features = [
   "http2",
-  "json",
   "multipart",
   "tokio",
   "tower-log",
@@ -197,6 +196,10 @@ ipnet = { version = "2.12.0", default-features = false, features = [
 # https://github.com/imbolc/axum-client-ip
 axum-client-ip = { version = "1.3.1", default-features = false, features = [
   "connect-info",
+] }
+# https://github.com/gengteng/axum-serde
+axum-serde = { version = "0.10.0", default-features = false, features = [
+  "sonic",
 ] }
 
 [dev-dependencies]
