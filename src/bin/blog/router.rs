@@ -15,7 +15,9 @@ use axum_client_ip::{ClientIp, ClientIpSource};
 use tower::ServiceBuilder;
 use tower_http::ServiceBuilderExt;
 use tower_http::catch_panic::CatchPanicLayer;
+use tower_http::compression::CompressionLayer;
 use tower_http::csrf::CsrfLayer;
+use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::on_early_drop::{EarlyDropsAsFailures, OnEarlyDropLayer};
 use tower_http::request_id::{MakeRequestId, RequestId};
 use tower_http::services::{ServeDir, ServeFile};
@@ -96,8 +98,8 @@ where
             StatusCode::REQUEST_TIMEOUT,
             Duration::from_secs(10),
         ))
-        .decompression()
-        .compression();
+        .layer(RequestDecompressionLayer::new())
+        .layer(CompressionLayer::new());
 
     let router = Router::new()
         .fallback_service(
