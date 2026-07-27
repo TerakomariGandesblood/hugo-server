@@ -65,7 +65,7 @@ where
         .with_ansi(false);
 
     let (stderr_writer, _stderr_guard) = NonBlockingBuilder::default()
-        .lossy(false)
+        .lossy(true)
         .finish(io::stderr());
     let stderr_layer = Layer::new()
         .with_writer(stderr_writer)
