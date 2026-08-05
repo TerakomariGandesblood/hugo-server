@@ -70,7 +70,8 @@ pub struct ServerConfig {
     pub url: Url,
     pub host: Ipv4Addr,
     pub port: u16,
-    pub opentelemetry_endpoint: Url,
+    pub trace_endpoint: Url,
+    pub metrics_endpoint: Url,
     pub allow_upload_ip_nets: Vec<IpNet>,
 }
 

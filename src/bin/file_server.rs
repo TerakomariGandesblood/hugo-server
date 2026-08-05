@@ -24,7 +24,12 @@ async fn main() -> Result<()> {
 
     let config = Config::load_config(".file_server_config.toml")?;
 
-    let _guard = my_servers::init_log(&args.verbose, &config.server.opentelemetry_endpoint, "log")?;
+    let _guard = my_servers::init_log(
+        &args.verbose,
+        &config.server.trace_endpoint,
+        &config.server.metrics_endpoint,
+        "log",
+    )?;
 
     let router = file::router(&config)?;
     let addr = SocketAddr::new(IpAddr::V4(config.server.host), config.server.port);

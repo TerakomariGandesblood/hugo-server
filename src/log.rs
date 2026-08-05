@@ -1,20 +1,26 @@
 use std::path::Path;
+use std::time::Duration;
 use std::{env, fs, io};
 
 use anyhow::Result;
 use clap_verbosity_flag::Verbosity;
 use jiff::Timestamp;
-use opentelemetry::KeyValue;
 use opentelemetry::trace::TracerProvider;
-use opentelemetry_otlp::{Protocol, SpanExporter, WithExportConfig};
+use opentelemetry::{KeyValue, global};
+use opentelemetry_otlp::{MetricExporter, Protocol, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::metrics::{MeterProviderBuilder, PeriodicReader, SdkMeterProvider};
 use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, SdkTracerProvider};
 use opentelemetry_semantic_conventions::SCHEMA_URL;
 use opentelemetry_semantic_conventions::attribute::{DEPLOYMENT_ENVIRONMENT_NAME, SERVICE_VERSION};
 use supports_color::Stream;
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
+use tokio::runtime::Handle;
+use tokio::task::JoinHandle;
+use tokio_metrics::RuntimeMonitor;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::Layer;
 use tracing_subscriber::fmt::format::Writer;
@@ -25,7 +31,8 @@ use url::Url;
 
 pub fn init_log<T>(
     verbose: &Verbosity,
-    opentelemetry_endpoint: &Url,
+    trace_endpoint: &Url,
+    metrics_endpoint: &Url,
     log_directory: T,
 ) -> Result<LogGuard>
 where
@@ -68,21 +75,29 @@ where
         .with_timer(JiffTimer)
         .with_ansi(supports_color::on(Stream::Stderr).is_some());
 
-    let tracer_provider = init_tracer_provider(opentelemetry_endpoint)?;
+    let tracer_provider = init_tracer_provider(trace_endpoint)?;
     let open_telemetry_layer =
         OpenTelemetryLayer::new(tracer_provider.tracer("tracing-otel-subscriber"));
+
+    let meter_provider = init_meter_provider(metrics_endpoint)?;
+    let meter_layer = MetricsLayer::new(meter_provider.clone());
 
     tracing_subscriber::registry()
         .with(filter_layer)
         .with(file_layer)
         .with(stderr_layer)
         .with(open_telemetry_layer)
+        .with(meter_layer)
         .init();
+
+    let meter_task = init_meter_task();
 
     Ok(LogGuard {
         _file_guard,
         _stderr_guard,
         tracer_provider,
+        meter_provider,
+        meter_task,
     })
 }
 
@@ -102,6 +117,64 @@ fn init_tracer_provider(endpoint: &Url) -> Result<SdkTracerProvider> {
         .with_resource(resource()?)
         .with_batch_exporter(exporter)
         .build())
+}
+
+fn init_meter_provider(endpoint: &Url) -> Result<SdkMeterProvider> {
+    let exporter = MetricExporter::builder()
+        .with_http()
+        .with_endpoint(endpoint.to_string())
+        .with_protocol(Protocol::HttpBinary)
+        .with_timeout(opentelemetry_otlp::OTEL_EXPORTER_OTLP_TIMEOUT_DEFAULT)
+        .build()?;
+
+    let reader = PeriodicReader::builder(exporter)
+        .with_interval(Duration::from_secs(5))
+        .build();
+
+    let meter_provider = MeterProviderBuilder::default()
+        .with_resource(resource()?)
+        .with_reader(reader)
+        .build();
+
+    global::set_meter_provider(meter_provider.clone());
+
+    Ok(meter_provider)
+}
+
+fn init_meter_task() -> JoinHandle<()> {
+    let handle = Handle::current();
+    let runtime_monitor = RuntimeMonitor::new(&handle);
+
+    let frequency = Duration::from_secs(1);
+
+    tokio::spawn(async move {
+        for metrics in runtime_monitor.intervals() {
+            let system = System::new_with_specifics(
+                RefreshKind::nothing()
+                    .with_cpu(CpuRefreshKind::nothing().with_cpu_usage())
+                    .with_memory(MemoryRefreshKind::nothing().with_ram()),
+            );
+
+            tracing::trace!(gauge.cpu = system.global_cpu_usage());
+            tracing::trace!(
+                gauge.memory = system.used_memory() as f32 / system.total_memory() as f32
+            );
+
+            tracing::trace!(gauge.workers_count = metrics.workers_count);
+            tracing::trace!(gauge.total_park_count = metrics.total_park_count);
+            tracing::trace!(gauge.max_park_count = metrics.max_park_count);
+            tracing::trace!(gauge.min_park_count = metrics.min_park_count);
+            tracing::trace!(
+                gauge.total_busy_duration = metrics.total_busy_duration.as_millis() as u64
+            );
+            tracing::trace!(gauge.max_busy_duration = metrics.max_busy_duration.as_millis() as u64);
+            tracing::trace!(gauge.min_busy_duration = metrics.min_busy_duration.as_millis() as u64);
+            tracing::trace!(gauge.global_queue_depth = metrics.global_queue_depth);
+            tracing::trace!(gauge.live_tasks_count = metrics.live_tasks_count);
+
+            tokio::time::sleep(frequency).await;
+        }
+    })
 }
 
 fn service_name() -> Result<String> {
@@ -132,6 +205,8 @@ pub struct LogGuard {
     _file_guard: WorkerGuard,
     _stderr_guard: WorkerGuard,
     tracer_provider: SdkTracerProvider,
+    meter_provider: SdkMeterProvider,
+    meter_task: JoinHandle<()>,
 }
 
 impl Drop for LogGuard {
@@ -139,6 +214,11 @@ impl Drop for LogGuard {
         if let Err(err) = self.tracer_provider.shutdown() {
             eprintln!("{err:?}");
         }
+        if let Err(err) = self.meter_provider.shutdown() {
+            eprintln!("{err:?}");
+        }
+
+        self.meter_task.abort();
     }
 }
 

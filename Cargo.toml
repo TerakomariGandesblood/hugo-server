@@ -23,7 +23,7 @@ anyhow = { version = "1.0.104", default-features = false, features = ["std"] }
 # https://github.com/zkat/supports-color
 supports-color = { version = "3.0.2", default-features = false }
 # https://github.com/clap-rs/clap
-clap = { version = "4.6.4", default-features = false, features = [
+clap = { version = "4.6.5", default-features = false, features = [
   "std",
   "color",
   "help",
@@ -61,22 +61,36 @@ tracing-appender = { version = "0.2.5", default-features = false }
 # https://github.com/tokio-rs/tracing-opentelemetry
 tracing-opentelemetry = { version = "0.33.0", default-features = false, features = [
   "tracing-log",
+  "metrics",
 ] }
 # https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry
 opentelemetry = { version = "0.32.0", default-features = false, features = [
   "trace",
+  "metrics",
 ] }
 # https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry-sdk
 opentelemetry_sdk = { version = "0.32.1", default-features = false, features = [
   "trace",
+  "metrics",
 ] }
 # https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry-otlp
 opentelemetry-otlp = { version = "0.32.0", default-features = false, features = [
   "trace",
+  "metrics",
   "grpc-tonic",
+  "http-proto",
+  "reqwest-blocking-client",
 ] }
 # https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry-semantic-conventions
 opentelemetry-semantic-conventions = { version = "0.32.1", default-features = false }
+# https://github.com/tokio-rs/tokio-metrics
+tokio-metrics = { version = "0.5.1", default-features = false, features = [
+  "rt",
+] }
+# https://github.com/GuillaumeGomez/sysinfo
+sysinfo = { version = "0.39.6", default-features = false, features = [
+  "system",
+] }
 # https://github.com/serde-rs/serde/tree/master/serde
 serde = { version = "1.0.229", default-features = false, features = [
   "std",
@@ -189,7 +203,7 @@ uuid = { version = "1.24.0", default-features = false, features = [
   "fast-rng",
 ] }
 # https://github.com/krisprice/ipnet
-ipnet = { version = "2.12.0", default-features = false, features = [
+ipnet = { version = "2.12.1", default-features = false, features = [
   "std",
   "serde",
 ] }
