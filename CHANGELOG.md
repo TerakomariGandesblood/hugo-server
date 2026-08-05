@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/TerakomariGandesblood/my-servers/compare/v0.7.1...v0.8.0) - 2026-08-05
+
+### <!-- 0 -->🚀 Features
+
+- filter out meter info
+- support metrics
+
+### <!-- 2 -->🚜 Refactor
+
+- use error! instead of eprintln!
+- use tracing_appender::non_blocking
+- use RequestDecompressionLayer
+- make stderr log writer lossy
+- use sonic
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- add config
+
 ## [0.7.1](https://github.com/TerakomariGandesblood/my-servers/compare/v0.7.0...v0.7.1) - 2026-07-22
 
 ### <!-- 2 -->🚜 Refactor
