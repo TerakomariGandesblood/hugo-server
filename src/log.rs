@@ -21,12 +21,11 @@ use tokio_metrics::RuntimeMonitor;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
-use tracing_subscriber::EnvFilter;
-use tracing_subscriber::fmt::Layer;
 use tracing_subscriber::fmt::format::Writer;
 use tracing_subscriber::fmt::time::FormatTime;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, Layer, filter, fmt};
 use url::Url;
 
 pub fn init_log<T>(
@@ -51,6 +50,26 @@ where
         }
     });
 
+    let meter_filter_layer = filter::filter_fn(|metadata| {
+        if !metadata.is_event() {
+            return true;
+        }
+
+        metadata.fields().iter().any(|field| {
+            let name = field.name();
+
+            if name.starts_with("monotonic_counter.")
+                || name.starts_with("counter.")
+                || name.starts_with("histogram.")
+                || name.starts_with("gauge.")
+            {
+                return false;
+            }
+
+            true
+        })
+    });
+
     if !log_directory.as_ref().try_exists()? {
         fs::create_dir_all(&log_directory)?;
     }
@@ -63,17 +82,19 @@ where
         .build(log_directory)?;
 
     let (file_writer, _file_guard) = tracing_appender::non_blocking(file_appender);
-    let file_layer = Layer::new()
+    let file_layer = fmt::Layer::new()
         .json()
         .with_writer(file_writer)
         .with_timer(JiffTimer)
-        .with_ansi(false);
+        .with_ansi(false)
+        .with_filter(meter_filter_layer.clone());
 
     let (stderr_writer, _stderr_guard) = tracing_appender::non_blocking(io::stderr());
-    let stderr_layer = Layer::new()
+    let stderr_layer = fmt::Layer::new()
         .with_writer(stderr_writer)
         .with_timer(JiffTimer)
-        .with_ansi(supports_color::on(Stream::Stderr).is_some());
+        .with_ansi(supports_color::on(Stream::Stderr).is_some())
+        .with_filter(meter_filter_layer);
 
     let tracer_provider = init_tracer_provider(trace_endpoint)?;
     let open_telemetry_layer =
@@ -155,22 +176,22 @@ fn init_meter_task() -> JoinHandle<()> {
                     .with_memory(MemoryRefreshKind::nothing().with_ram()),
             );
 
-            tracing::trace!(gauge.cpu = system.global_cpu_usage());
-            tracing::trace!(
+            tracing::info!(gauge.cpu = system.global_cpu_usage());
+            tracing::info!(
                 gauge.memory = system.used_memory() as f32 / system.total_memory() as f32
             );
 
-            tracing::trace!(gauge.workers_count = metrics.workers_count);
-            tracing::trace!(gauge.total_park_count = metrics.total_park_count);
-            tracing::trace!(gauge.max_park_count = metrics.max_park_count);
-            tracing::trace!(gauge.min_park_count = metrics.min_park_count);
-            tracing::trace!(
+            tracing::info!(gauge.workers_count = metrics.workers_count);
+            tracing::info!(gauge.total_park_count = metrics.total_park_count);
+            tracing::info!(gauge.max_park_count = metrics.max_park_count);
+            tracing::info!(gauge.min_park_count = metrics.min_park_count);
+            tracing::info!(
                 gauge.total_busy_duration = metrics.total_busy_duration.as_millis() as u64
             );
-            tracing::trace!(gauge.max_busy_duration = metrics.max_busy_duration.as_millis() as u64);
-            tracing::trace!(gauge.min_busy_duration = metrics.min_busy_duration.as_millis() as u64);
-            tracing::trace!(gauge.global_queue_depth = metrics.global_queue_depth);
-            tracing::trace!(gauge.live_tasks_count = metrics.live_tasks_count);
+            tracing::info!(gauge.max_busy_duration = metrics.max_busy_duration.as_millis() as u64);
+            tracing::info!(gauge.min_busy_duration = metrics.min_busy_duration.as_millis() as u64);
+            tracing::info!(gauge.global_queue_depth = metrics.global_queue_depth);
+            tracing::info!(gauge.live_tasks_count = metrics.live_tasks_count);
 
             tokio::time::sleep(frequency).await;
         }
