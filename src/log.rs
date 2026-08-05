@@ -212,10 +212,10 @@ pub struct LogGuard {
 impl Drop for LogGuard {
     fn drop(&mut self) {
         if let Err(err) = self.tracer_provider.shutdown() {
-            eprintln!("{err:?}");
+            tracing::error!("{err}")
         }
         if let Err(err) = self.meter_provider.shutdown() {
-            eprintln!("{err:?}");
+            tracing::error!("{err}")
         }
 
         self.meter_task.abort();
